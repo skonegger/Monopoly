@@ -1,8 +1,37 @@
-Monopoly mit Fußball
-
-Es gib 3 verschiedene Karten: Ereigniskarten, Gemeinschaftskarten und Transferkarten (neu):
-- Transferkarten: Ist ein Karte, die bestimmt in welcher Nationalmannschaft der Trainer spielen muss. Je besser die Nationalmannschaft, desto höher fällt der Bonus oder Strafe aus (z.B.: Spanien = +100; Albanien = +25)
-            Es werden zufällig 3 Nationen ausgelost, wo man nur eine auswählen darf. 
-- Ereigniskarten: Klassische Karte wo entweder Belohnungen oder Strafen verteilt werden(z.B.: Deine Nationalmannschaft hat sich nicht für die WM qualifiziert -> Für die nächsten 5 Runden können keine Häuser gebaut werden)
-- Gemeinschaftskarten: Klassische Karte wo entweder Belohnungen oder die Fortbewegung draufstehen(z.B.: Freundschaftsspiel mit Real Madrid -> Gehe zum Feld Real Madrid. Falls du über los gehst, ziehe 200+Mannschaftsbonus ein).
+Monopoly: Fußball-Edition
+1. Programmziele & Funktionalitäten
+Was soll das Programm machen?
+Das Ziel ist eine digitale Umsetzung des Brettspiel-Klassikers Monopoly, jedoch komplett im Fußball-Kontext. Anstatt Immobilien zu verwalten, managen die Spieler Fußballvereine, bauen Stadien und versuchen, durch sportlichen Erfolg (Mieteinnahmen) die Konkurrenz in den Bankrott zu treiben.
+Die wichtigsten Funktionalitäten:
+•	Spieler- & Finanzverwaltung: Tracking von Guthaben, Besitz und Position auf dem Feld.
+•	Automatisierte Spielmechanik: Würfel-Logik, Rundendurchlauf und Überprüfung von Siegbedingungen.
+•	Handelssystem: Kauf von Vereinen und Ausbau von Stadien (Häuser/Hotels).
+•	Ereignissystem: Zufällige Spielereignisse (Verletzungen, Transfererlöse, Siegprämien).
+2. Verwendete Technologien
+•	Programmiersprache: Python (wegen der hohen Lesbarkeit und der starken Unterstützung für objektorientierte Programmierung).
+•	Benutzeroberfläche: Phase 1: CLI 
+o	Phase 2: Pygame für eine grafische Darstellung.
+•	Datenformate: JSON oder CSV, um die Vereinsdaten (Namen, Preise, Mieten) extern zu speichern und leicht editierbar zu machen.
+3. Iterationsplanung (Die 5 Runden)
+5 Runden:
+1. Das "Spielfeld"-Modell (Datenstruktur)
+•	Aufgabe: Erstelle eine Klasse Feld (mit Name, Preis, Miete) und eine Liste, die alle 40 Felder des Bretts repräsentiert.
+•	Fußball-Twist: Ersetze Bahnhöfe durch "Internationale Flughäfen" für Auswärtsspiele und die Ereigniskarten durch "Schiedsrichter-Entscheidungen".
+•	Ziel: Eine funktionierende Liste von Objekten, die du im Code abrufen kannst.
+2. Spieler & Bewegung (Die Logik)
+•	Aufgabe: Erstelle eine Klasse Spieler. Diese speichert das aktuelle Guthaben, die Position (Index 0–39) und die Liste der gekauften Vereine.
+•	Logik: Schreibe eine Funktion für den Würfelwurf (Random-Modul) und stelle sicher, dass der Spieler wieder bei 0 anfängt, wenn er über "Los" (oder "Saisonstart") geht.
+•	Ziel: Ein Spieler kann würfeln und landet auf dem korrekten Feld.
+3. Finanzen & Besitz (Das Wirtschaftssystem)
+•	Aufgabe: Implementiere die Logik für den Kauf von Feldern. Wenn ein Spieler auf ein freies Feld kommt, kann er es kaufen. Wenn es bereits jemandem gehört, wird Miete abgezogen.
+•	Fußball-Twist: Statt Häusern und Hotels baust du "Tribünen" und "Stadien" aus, um die Mieteinnahmen zu erhöhen.
+•	Ziel: Das Programm erkennt automatisch: "Feld gehört Spieler A -> Spieler B zahlt X Euro".
+4. Ereignisse & Sonderregeln
+•	Aufgabe: Erstelle Stapel für Ereignis- und Gemeinschaftskarten. Implementiere das Gefängnis (oder "Rote Karte / Spielsperre").
+•	Logik: Karten wie "Rote Karte: Gehe direkt in die Kabine" oder "Siegprämie: Erhalte 200€".
+•	Ziel: Alle Spezialfelder (Steuern, Karten, Sperre) haben eine Funktion.
+5. Das Main-Loop & UI (Das fertige Spiel)
+•	Aufgabe: Erstelle eine while-Schleife, die so lange läuft, bis nur noch ein Spieler übrig ist (oder eine bestimmte Rundenzahl erreicht wurde).
+•	Interface: Für den Anfang reicht eine textbasierte Ausgabe in der Konsole (print-Befehle), die den Status anzeigt: "Du bist auf FC Bayern gelandet. Möchtest du kaufen? (j/n)".
+•	Ziel: Ein voll spielbarer "Game Loop", bei dem Spieler nacheinander ihre Züge machen können.
 
