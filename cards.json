@@ -1,0 +1,516 @@
+{
+  "cards": {
+    
+    "VAR": [
+      {
+        "id": 1,
+        "effekt": "Notbremse erkannt. Zahle 50€",
+        "value": -50
+      },
+      {
+        "id": 2,
+        "effekt": "Handspiel im Strafraum. Dein positiver Effekt ist für eine Runde deaktiviert.",
+        "action": false
+      },
+      {
+        "id": 3,
+        "effekt": "Rote Karte! Gehe direkt ins Gefängnis. Kein Geld bei Saisonstart.",
+        "action": false
+      },
+      {
+        "id": 4,
+        "effekt": "Tor aberkannt wegen Abseits. Gehe 3 Felder zurück.",
+        "value": -3
+      },
+      {
+        "id": 5,
+        "effekt": "Elfmeter gegen dich. Zahle 30€",
+        "value": -30
+      },
+      {
+        "id": 6,
+        "effekt": "Verletzung im Zweikampf. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 7,
+        "effekt": "Schwalbe entdeckt. Zahle 20€",
+        "value": -20
+      },
+      {
+        "id": 8,
+        "effekt": "Du verlierst die Champions League. Kein Saisonstart-Bonus.",
+        "action": false
+      },
+      {
+        "id": 9,
+        "effekt": "Doppel-Foul. Du und ein Gegner setzen 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 10,
+        "effekt": "Gefährliches Spiel erkannt. Verliere 1 Karte.",
+        "action": false
+      },
+      {
+        "id": 11,
+        "effekt": "VAR überprüft Tor: nicht gültig. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 12,
+        "effekt": "Abseits falsch gelesen. Gehe 2 Felder zurück.",
+        "value": -2
+      },
+      {
+        "id": 13,
+        "effekt": "Elfmeter wiederholt. Nächster Spieler würfelt erneut.",
+        "action": true
+      },
+      {
+        "id": 14,
+        "effekt": "Handspiel nicht gesehen. Glück gehabt.",
+        "action": true
+      },
+      {
+        "id": 15,
+        "effekt": "Unsportliches Verhalten. Zahle 25€ für 3 Runden.",
+        "value": -25
+      },
+      {
+        "id": 16,
+        "effekt": "VAR nimmt Vorteil zurück. Zug endet sofort.",
+        "action": false
+      },
+      {
+        "id": 17,
+        "effekt": "Rudelbildung. Du und Nachbarn setzen aus.",
+        "action": false
+      },
+      {
+        "id": 18,
+        "effekt": "Grobes Foul. Gelbe Karte erhalten.",
+        "action": false
+      },
+      {
+        "id": 19,
+        "effekt": "Torwart-Foul. Gegner erhält Freistoß + Bonuszug.",
+        "action": true
+      },
+      {
+        "id": 20,
+        "effekt": "Zahle 25€.",
+        "value": -25
+      },
+      {
+        "id": 21,
+        "effekt": "VAR bestätigt Elfmeter. Zahle 25€",
+        "value": -25
+      },
+      {
+        "id": 22,
+        "effekt": "Zukünftige Zahlungen +25% teurer.",
+        "action": false
+      },
+      {
+        "id": 23,
+        "effekt": "Zeitspiel erkannt. Zahle 25€",
+        "value": -25
+      },
+      {
+        "id": 24,
+        "effekt": "Tor zählt. Nächster Nachbar zahlt keine Miete.",
+        "action": true
+      },
+      {
+        "id": 25,
+        "effekt": "Angriff gestoppt. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 26,
+        "effekt": "Abseits falsch. +1 Extra-Zug.",
+        "action": true
+      },
+      {
+        "id": 27,
+        "effekt": "VAR Chaos. Alle ziehen eine Karte.",
+        "action": true
+      },
+      {
+        "id": 28,
+        "effekt": "Diskussion kostet dich 25€.",
+        "value": -25
+      },
+      {
+        "id": 29,
+        "effekt": "Reise zum Real Madrid Stadion.",
+        "action": true
+      },
+      {
+        "id": 30,
+        "effekt": "Ballkontakt übersehen. Zahle 25€",
+        "value": -25
+      },
+      {
+        "id": 31,
+        "effekt": "Unsportliche Diskussion. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 32,
+        "effekt": "Elfmeter aufgehoben. Neuer Versuch erlaubt.",
+        "action": true
+      },
+      {
+        "id": 33,
+        "effekt": "VAR Delay. Nächster Zug entfällt.",
+        "action": false
+      },
+      {
+        "id": 34,
+        "effekt": "Tor zählt doppelt. Nächste Miete auch doppelt.",
+        "action": true
+      },
+      {
+        "id": 35,
+        "effekt": "Kein Effekt.",
+        "action": true
+      },
+      {
+        "id": 36,
+        "effekt": "Rote Karte wird zu Gelb. +25€",
+        "value": 25
+      },
+      {
+        "id": 37,
+        "effekt": "Alle gehen 1 Feld zurück.",
+        "action": false
+      },
+      {
+        "id": 38,
+        "effekt": "Gefängnisfrei-Karte erhalten.",
+        "action": true
+      },
+      {
+        "id": 39,
+        "effekt": "Rote Karte.",
+        "action": false
+      },
+      {
+        "id": 40,
+        "effekt": "Du gibst einem Spieler eine gelbe Karte.",
+        "action": true
+      },
+      {
+        "id": 41,
+        "effekt": "Tor aberkannt. Letzter Kauf wird zurückgesetzt.",
+        "action": false
+      },
+      {
+        "id": 42,
+        "effekt": "Gelbe Karte erhalten. Bei Rot +25€",
+        "value": -25
+      },
+      {
+        "id": 43,
+        "effekt": "Gehe 1 Feld zurück und zahle 10€",
+        "value": -10
+      },
+      {
+        "id": 44,
+        "effekt": "Tausche Position mit einem Spieler.",
+        "action": true
+      },
+      {
+        "id": 45,
+        "effekt": "Schwalbe erkannt. Zahle 30€",
+        "value": -30
+      },
+      {
+        "id": 46,
+        "effekt": "Rote Karte bestätigt. Gefängnis.",
+        "action": false
+      },
+      {
+        "id": 47,
+        "effekt": "Nächster Nachbar bekommt Bonuszug.",
+        "action": true
+      },
+      {
+        "id": 48,
+        "effekt": "Reise zum PSG Stadion.",
+        "action": true
+      },
+      {
+        "id": 49,
+        "effekt": "Reise zum FC Bayern Stadion.",
+        "action": true
+      },
+      {
+        "id": 50,
+        "effekt": "Alle zahlen 50€",
+        "value": -50
+      }
+    ],
+
+   "PRÄMIE": [
+      {
+        "id": 1,
+        "effekt": "Stadionbonus! Du bekommst 20€ von jedem Spieler.",
+        "value": 20
+      },
+      {
+        "id": 2,
+        "effekt": "Sponsorenvertrag abgeschlossen. Erhalte 50€.",
+        "value": 50
+      },
+      {
+        "id": 3,
+        "effekt": "Trainingslager bezahlt. Zahle 30€.",
+        "value": -30
+      },
+      {
+        "id": 4,
+        "effekt": "Fanbonus! Für jeden Verein den du besitzt, erhältst du 25€.",
+        "value": 25
+      },
+      {
+        "id": 5,
+        "effekt": "Medienkritik. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 6,
+        "effekt": "Ausverkauftes Stadion! Erhalte 40€ Bonus.",
+        "value": 40
+      },
+      {
+        "id": 7,
+        "effekt": "Neue Ausrüstung gesponsert. Keine Kosten diese Runde.",
+        "action": true
+      },
+      {
+        "id": 8,
+        "effekt": "Spielervertrag verlängert. Zahle 25€.",
+        "value": -25
+      },
+      {
+        "id": 9,
+        "effekt": "Fan-Choreo begeistert alle. Erhalte 30€.",
+        "value": 30
+      },
+      {
+        "id": 10,
+        "effekt": "Transfergerüchte. Tausche 1 Karte mit einem Gegner.",
+        "action": true
+      },
+
+      {
+        "id": 11,
+        "effekt": "TV-Interview bringt Bonus. Erhalte 30€.",
+        "value": 30
+      },
+      {
+        "id": 12,
+        "effekt": "Trainingsverletzung vermieden. Kein Effekt.",
+        "action": true
+      },
+      {
+        "id": 13,
+        "effekt": "Saisonstart-Bonus! Erhalte 50€.",
+        "value": 50
+      },
+      {
+        "id": 14,
+        "effekt": "Sponsoring-Verlust. Zahle 20€.",
+        "value": -20
+      },
+      {
+        "id": 15,
+        "effekt": "Junger Spieler gescoutet. Erhalte 100€.",
+        "value": 100
+      },
+      {
+        "id": 16,
+        "effekt": "Teamgeist steigt. Nächster VAR-Effekt wird ignoriert.",
+        "action": true
+      },
+      {
+        "id": 17,
+        "effekt": "Reise zum Auswärtsspiel. Zahle 15€.",
+        "value": -15
+      },
+      {
+        "id": 18,
+        "effekt": "Heimvorteil aktiviert. +1 Bonus im nächsten Zug.",
+        "action": true
+      },
+      {
+        "id": 19,
+        "effekt": "Presseskandal. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 20,
+        "effekt": "Fan-Support explodiert. Erhalte 60€.",
+        "value": 60
+      },
+
+      {
+        "id": 21,
+        "effekt": "Fitness-Boost. Nächster negativer Effekt wird ignoriert.",
+        "action": true
+      },
+      {
+        "id": 22,
+        "effekt": "Sponsor kündigt. Zahle 40€.",
+        "value": -40
+      },
+      {
+        "id": 23,
+        "effekt": "Medientraining erfolgreich. Kein negativer Effekt diese Runde.",
+        "action": true
+      },
+      {
+        "id": 24,
+        "effekt": "Starspieler verletzt sich im Training. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 25,
+        "effekt": "Fanartikel verkauft. Erhalte 35€.",
+        "value": 35
+      },
+      {
+        "id": 26,
+        "effekt": "Trainerwechsel. Tausche Position mit einem Spieler.",
+        "action": true
+      },
+      {
+        "id": 27,
+        "effekt": "Taktik verbessert. +1 Vorteil im nächsten Spiel.",
+        "action": true
+      },
+      {
+        "id": 28,
+        "effekt": "Stadion renoviert. Zahle 25€.",
+        "value": -25
+      },
+      {
+        "id": 29,
+        "effekt": "Jugendakademie Erfolg. Ziehe 2 Karten, wähle 1.",
+        "action": true
+      },
+      {
+        "id": 30,
+        "effekt": "Internationale Aufmerksamkeit. Erhalte 45€.",
+        "value": 45
+      },
+
+      {
+        "id": 31,
+        "effekt": "Fanproteste. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 32,
+        "effekt": "Siegesserie gestartet. Erhalte 50€ Bonus.",
+        "value": 50
+      },
+      {
+        "id": 33,
+        "effekt": "Spielerverletzung vermieden. Kein Effekt.",
+        "action": true
+      },
+      {
+        "id": 34,
+        "effekt": "Werbevertrag verloren. Zahle 30€.",
+        "value": -30
+      },
+      {
+        "id": 35,
+        "effekt": "Taktische Analyse verbessert dein Team.",
+        "action": true
+      },
+      {
+        "id": 36,
+        "effekt": "VAR-Skandal vergessen. Kein Effekt.",
+        "action": true
+      },
+      {
+        "id": 37,
+        "effekt": "Social Media Hype. Erhalte 20€.",
+        "value": 20
+      },
+      {
+        "id": 38,
+        "effekt": "Spielerverkauf erfolgreich. Erhalte 70€.",
+        "value": 70
+      },
+      {
+        "id": 39,
+        "effekt": "Reisechaos. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 40,
+        "effekt": "Teamfeier! Alle Spieler erhalten +10€ Bonus.",
+        "value": 10
+      },
+
+      {
+        "id": 41,
+        "effekt": "Saisonziele erreicht. Erhalte 80€.",
+        "value": 80
+      },
+      {
+        "id": 42,
+        "effekt": "Sponsorbonus gestrichen. Zahle 20€.",
+        "value": -20
+      },
+      {
+        "id": 43,
+        "effekt": "Fanliebe steigt. Ziehe 1 Extra-Karte.",
+        "action": true
+      },
+      {
+        "id": 44,
+        "effekt": "Medienlob. Kein negativer Effekt im nächsten Zug.",
+        "action": true
+      },
+      {
+        "id": 45,
+        "effekt": "Spielplanänderung. Tausche Position mit anderem Spieler.",
+        "action": true
+      },
+      {
+        "id": 46,
+        "effekt": "Rekordvertrag abgeschlossen. Erhalte 100€.",
+        "value": 100
+      },
+      {
+        "id": 47,
+        "effekt": "Teammeeting läuft schlecht. Setze 1 Runde aus.",
+        "action": false
+      },
+      {
+        "id": 48,
+        "effekt": "Fanboykott. Zahle 50€.",
+        "value": -50
+      },
+      {
+        "id": 49,
+        "effekt": "Glückliche Zufallsförderung. Ziehe 2 Karten.",
+        "action": true
+      },
+      {
+        "id": 50,
+        "effekt": "Finaler Bonus! Erhalte 200€.",
+        "value": 200
+      }
+    ]
+  }
+}
+
+   
