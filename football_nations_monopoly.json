@@ -1,0 +1,302 @@
+[
+    {
+        "name": "Argentinien",
+        "positive_effect": "Weltmeister-Bonus: +20% Einnahmen auf Mieten.",
+        "negative_effect": "Hitzköpfig: Doppelte Kosten bei Roten Karten.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Argentinien."
+    },
+    {
+        "name": "Frankreich",
+        "positive_effect": "Talentschmiede: Stadionbau ist 15% günstiger.",
+        "negative_effect": "Interne Unruhen: Ereigniskarten sind 20% teurer.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Frankreich."
+    },
+    {
+        "name": "Brasilien",
+        "positive_effect": "Joga Bonito: Erhalte 50€ extra beim Passieren von LOS.",
+        "negative_effect": "Defensivschwäche: Zahle 10% mehr Miete an andere.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Brasilien."
+    },
+    {
+        "name": "England",
+        "positive_effect": "Mutterland des Fußballs: +15% Einnahmen aus Sponsoring.",
+        "negative_effect": "Elfmeter-Fluch: Verliere 50€ bei jedem Pasch-Wurf.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von England."
+    },
+    {
+        "name": "Belgien",
+        "positive_effect": "Goldene Generation: Alle Vereinskosten sind 10% reduziert.",
+        "negative_effect": "Titellos: Erhalte keine Boni bei gewonnenen Turnieren.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Belgien."
+    },
+    {
+        "name": "Kroatien",
+        "positive_effect": "Ausdauer: Immunität gegen die erste Mietzahlung über 200€.",
+        "negative_effect": "Kleiner Kader: Stadionausbau dauert eine Runde länger.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Kroatien."
+    },
+    {
+        "name": "Niederlande",
+        "positive_effect": "Totaler Fußball: Darfst 1x pro Runde neu würfeln.",
+        "negative_effect": "Vize-Trauma: Zweiter Platz bei Ereignissen kostet 100€.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Niederlande."
+    },
+    {
+        "name": "Italien",
+        "positive_effect": "Catenaccio: Zahle 25% weniger Miete auf fremden Feldern.",
+        "negative_effect": "Wenig Tore: Eigene Mieteinnahmen sind um 10% reduziert.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Italien."
+    },
+    {
+        "name": "Portugal",
+        "positive_effect": "CR7-Effekt: Verkaufe Vereine zum 1.2-fachen Wert.",
+        "negative_effect": "Egoismus: Sponsoren-Boni werden halbiert.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Portugal."
+    },
+    {
+        "name": "Spanien",
+        "positive_effect": "Tiki-Taka: Erhalte 20€ für jeden eigenen Verein pro Runde.",
+        "negative_effect": "Ballbesitz ohne Ertrag: Bauen von Stadien kostet 20% mehr.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Spanien."
+    },
+    {
+        "name": "Marokko",
+        "positive_effect": "Überraschungsteam: Ereigniskarten sind immer positiv.",
+        "negative_effect": "Außenseiter: Startet mit 200€ weniger Kapital.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Marokko."
+    },
+    {
+        "name": "Schweiz",
+        "positive_effect": "Präzision: Landest du auf LOS, verdoppelt sich das Geld.",
+        "negative_effect": "Neutralität: Darfst keine Deals mit Mitspielern eingehen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Schweiz."
+    },
+    {
+        "name": "USA",
+        "positive_effect": "Marketing-Gigant: Doppeltes Geld auf Sponsorenfeldern.",
+        "negative_effect": "Soccer-Stigma: Vereine kosten im Kauf 15% mehr.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von USA."
+    },
+    {
+        "name": "Deutschland",
+        "positive_effect": "Turniermannschaft: Boni steigen pro gespielter Runde.",
+        "negative_effect": "Umbruchphase: Stadionmiete sinkt, wenn du im Gefängnis bist.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Deutschland."
+    },
+    {
+        "name": "Mexiko",
+        "positive_effect": "Heimvorteil: Miete auf eigenen Feldern ist 20% höher.",
+        "negative_effect": "Höhenluft: Reisekosten auf Bahnhöfen sind doppelt so hoch.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Mexiko."
+    },
+    {
+        "name": "Uruguay",
+        "positive_effect": "Garra Charrúa: Darfst das Gefängnis sofort kostenlos verlassen.",
+        "negative_effect": "Harte Gangart: Zahle 50€ Strafe bei jedem 3. Zug.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Uruguay."
+    },
+    {
+        "name": "Kolumbien",
+        "positive_effect": "Kaffee-Power: Darfst bei jedem Zug ein Feld weiter rücken.",
+        "negative_effect": "Hektik: Musst bei Pasch sofort eine Ereigniskarte ziehen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Kolumbien."
+    },
+    {
+        "name": "Senegal",
+        "positive_effect": "Teranga-Spirit: Mitspieler müssen dir 10€ schenken bei Besuch.",
+        "negative_effect": "Lange Anreise: Kosten für Flughäfen/Bahnhöfe +30%.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Senegal."
+    },
+    {
+        "name": "Dänemark",
+        "positive_effect": "Dynamit: Zerstöre ein gegnerisches Haus bei Landung auf Feld.",
+        "negative_effect": "Kühles Klima: Mieteinnahmen bei Regen-Events halbiert.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Dänemark."
+    },
+    {
+        "name": "Japan",
+        "positive_effect": "Disziplin: Keine Kosten für Instandhaltung von Stadien.",
+        "negative_effect": "Respekt: Darfst keine Miete von Spielern mit weniger Geld fordern.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Japan."
+    },
+    {
+        "name": "Peru",
+        "positive_effect": "Fan-Support: Erhalte 100€, wenn du auf einem Fan-Feld landest.",
+        "negative_effect": "Qualifikations-Druck: Musst bei LOS eine Strafe von 50€ zahlen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Peru."
+    },
+    {
+        "name": "Schweden",
+        "positive_effect": "Stabilität: Dein Geld kann nicht durch Ereignisse unter 100€ fallen.",
+        "negative_effect": "Hohe Steuern: Zahle 20% mehr auf Steuerfeldern.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Schweden."
+    },
+    {
+        "name": "Polen",
+        "positive_effect": "Torjäger: Erhalte 50€ für jedes eigene Stadion bei Miete.",
+        "negative_effect": "Abhängigkeit: Ohne Stadion sind Mieten 30% niedriger.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Polen."
+    },
+    {
+        "name": "Iran",
+        "positive_effect": "Abwehrriegel: Gegner dürfen auf deinen Feldern nicht bauen.",
+        "negative_effect": "Isolation: Handel mit anderen Spielern kostet 50€ Gebühr.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Iran."
+    },
+    {
+        "name": "Südkorea",
+        "positive_effect": "High-Speed: Würfle mit 3 Würfeln (wähle die besten 2).",
+        "negative_effect": "Erschöpfung: Musst jede 10. Runde eine Runde aussetzen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Südkorea."
+    },
+    {
+        "name": "Ukraine",
+        "positive_effect": "Kampfgeist: Erhalte 200€ Notfallhilfe bei Kontostand < 50€.",
+        "negative_effect": "Heimatlos: Darfst auf dem Nationen-Feld nicht verweilen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Ukraine."
+    },
+    {
+        "name": "Australien",
+        "positive_effect": "Outback-Härte: Gefängnisaufenthalte bringen 50€ pro Runde.",
+        "negative_effect": "Reisedistanz: Jeder Bahnhofs-Besuch kostet extra 50€.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Australien."
+    },
+    {
+        "name": "Wales",
+        "positive_effect": "Golf-Motto: Erhalte Geld für jede Runde, in der du nicht baust.",
+        "negative_effect": "Small Nation: Max. 3 Häuser pro Verein erlaubt.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Wales."
+    },
+    {
+        "name": "Serbien",
+        "positive_effect": "Physis: Spieler auf deinen Feldern müssen 1 Runde aussetzen.",
+        "negative_effect": "Temperament: Wahrscheinlichkeit für Gefängnis ist doppelt so hoch.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Serbien."
+    },
+    {
+        "name": "Österreich",
+        "positive_effect": "Alpenfestung: Miete erhöht sich bei jedem Besuch um 10€.",
+        "negative_effect": "Cordoba-Komplex: Verliere 100€ gegen Deutschland-Spieler.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Österreich."
+    },
+    {
+        "name": "Ungarn",
+        "positive_effect": "Goldene Elf: Historische Vereine kosten 20% weniger.",
+        "negative_effect": "Vergangener Ruhm: Miete sinkt im späten Spielverlauf.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Ungarn."
+    },
+    {
+        "name": "Tunesien",
+        "positive_effect": "Wüstenfuchs: Keine Miete auf unbebauten Feldern zahlen.",
+        "negative_effect": "Hitze: Kosten für Stadionausbau steigen um 25%.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Tunesien."
+    },
+    {
+        "name": "Chile",
+        "positive_effect": "Pressing: Stehle 20€ von jedem Spieler, den du überholst.",
+        "negative_effect": "Kraftaufwand: Zahle 10€ pro Feld, das du ziehst.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Chile."
+    },
+    {
+        "name": "Nigeria",
+        "positive_effect": "Super Eagles: Fliegen zu Flughäfen ist kostenlos.",
+        "negative_effect": "Verwaltung: Zahle 100€ Bearbeitungsgebühr bei jedem Hauskauf.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Nigeria."
+    },
+    {
+        "name": "Tschechien",
+        "positive_effect": "Bierruhe: Immunität gegen negative Ereigniskarten.",
+        "negative_effect": "Lethargie: Du darfst erst ab Runde 5 Häuser bauen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Tschechien."
+    },
+    {
+        "name": "Algerien",
+        "positive_effect": "Technik: Erhalte 50€ bei jedem 'Trick'-Feld.",
+        "negative_effect": "Inkonstanz: Mieteinnahmen schwanken jede Runde um +/- 20%.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Algerien."
+    },
+    {
+        "name": "Ägypten",
+        "positive_effect": "Pharaonen-Bonus: Zinsen von 5% auf dein Barvermögen.",
+        "negative_effect": "Fluch der Mumie: Ein zufälliges Haus wird jede 15. Runde gelöscht.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Ägypten."
+    },
+    {
+        "name": "Schottland",
+        "positive_effect": "Braveheart: Miete auf deinen Feldern verdoppelt sich bei Regen.",
+        "negative_effect": "Geiz: Du darfst keine Hypotheken aufnehmen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Schottland."
+    },
+    {
+        "name": "Norwegen",
+        "positive_effect": "Haaland-Power: Einzug von 500€ bei Landung auf Start.",
+        "negative_effect": "Kostspielig: Alle Fixkosten sind um 20% erhöht.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Norwegen."
+    },
+    {
+        "name": "Türkei",
+        "positive_effect": "Hexenkessel: Gegner müssen auf deinen Feldern 2x würfeln (höheres zählt).",
+        "negative_effect": "Hitzig: Jede 2. Ereigniskarte schickt dich ins Gefängnis.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Türkei."
+    },
+    {
+        "name": "Kamerun",
+        "positive_effect": "Unbezähmbare Löwen: Erhalte 100€ bei Sieg gegen Top-Nationen.",
+        "negative_effect": "Organisation: Deine Züge dauern länger (Zahlst 20€ Zeitstrafe).",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Kamerun."
+    },
+    {
+        "name": "Ecuador",
+        "positive_effect": "Höhenvorteil: Gegner zahlen 50€ 'Sauerstoffgebühr' auf deinen Feldern.",
+        "negative_effect": "Tiefland-Schwäche: Auf fremden Feldern zahlst du 10% mehr.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Ecuador."
+    },
+    {
+        "name": "Irland",
+        "positive_effect": "Luck of the Irish: Würfle bei jedem Kauf eine Münze (Kopf = 50% Rabatt).",
+        "negative_effect": "Pub-Besuch: Landest du auf einem Versorgungsfeld, setzt du 1 Runde aus.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Irland."
+    },
+    {
+        "name": "Griechenland",
+        "positive_effect": "Euro 2004 Spirit: Gewinne das Spiel sofort bei Besitz aller blauen Felder.",
+        "negative_effect": "Schuldenkrise: Kreditaufnahmen kosten 50% Zinsen.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Griechenland."
+    },
+    {
+        "name": "Elfenbeinküste",
+        "positive_effect": "Elefanten-Stärke: Kann nicht von Feldern gestoßen werden.",
+        "negative_effect": "Schwerfällig: Du ziehst immer 1 Feld weniger als gewürfelt.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Elfenbeinküste."
+    },
+    {
+        "name": "Paraguay",
+        "positive_effect": "Kämpferherz: Mieteinnahmen steigen, wenn du weniger als 500€ hast.",
+        "negative_effect": "Defensiv-Fokus: Stadionbau erst ab 4 Vereinen möglich.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Paraguay."
+    },
+    {
+        "name": "Ghana",
+        "positive_effect": "Black Stars: Erhalte 50€ bei jedem Pasch.",
+        "negative_effect": "Handspiel-Trauma: Verliere 200€, wenn du auf dem 13. Feld landest.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Ghana."
+    },
+    {
+        "name": "Rumänien",
+        "positive_effect": "Karpaten-Maradona: Alle Käufe sind 10% günstiger.",
+        "negative_effect": "Dunkle Nächte: Mieteinnahmen halbiert in ungeraden Runden.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Rumänien."
+    },
+    {
+        "name": "Kanada",
+        "positive_effect": "Fairplay: Erhalte 100€, wenn du keine Miete von einem armen Spieler nimmst.",
+        "negative_effect": "Eishockey-Fokus: Fußball-Einnahmen sind generell 5% niedriger.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Kanada."
+    },
+    {
+        "name": "Slowakei",
+        "positive_effect": "Underdog: Erhalte 50€ von der Bank, wenn du auf einem teuren Feld landest.",
+        "negative_effect": "Unbekannt: Sponsoren zahlen dir 20% weniger.",
+        "description": "Spezielle Charakteristik der Nationalmannschaft von Slowakei."
+    }
+]
