@@ -1,0 +1,358 @@
+{
+  "board": [
+    {
+      "id": 0,
+      "name": "LOS",
+      "type": "start",
+      "effect": 200
+    },
+
+    {
+      "id": 1,
+      "name": "Rapid Wien",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 1,
+      "price": 60,
+      "rent": 2,
+      "owner": null
+    },
+    {
+      "id": 2,
+      "name": "PRÄMIECARD",
+      "type": "card",
+      "deck": "PRÄMIE"
+    },
+    {
+      "id": 3,
+      "name": "RB SALZBRUG",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 1,
+      "price": 60,
+      "rent": 4,
+      "owner": null
+    },
+
+    {
+      "id": 4,
+      "name": "GEHALTSANPASSUNG",
+      "type": "tax",
+      "effect": 200
+    },
+
+    {
+      "id": 5,
+      "name": "PRIME VIDEO",
+      "type": "TV",
+      "price": 200,
+      "rent": 25,
+      "owner": null
+    },
+
+    {
+      "id": 6,
+      "name": "Feyenoord",
+      "type": "property",
+      "group": 2,
+      "stadium_level": 0,
+      "price": 100,
+      "rent": 6,
+      "owner": null
+    },
+    {
+      "id": 7,
+      "name": "VARCARD",
+      "type": "card",
+      "deck": "VAR"
+    },
+    {
+      "id": 8,
+      "name": "PSV EINDHOVEN",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 2,
+      "price": 100,
+      "rent": 6,
+      "owner": null
+    },
+    {
+      "id": 9,
+      "name": "AJAX",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 2,
+      "price": 120,
+      "rent": 8,
+      "owner": null
+    },
+
+    {
+      "id": 10,
+      "name": "SPERRE/GELBE_KARTE",
+      "type": "GELBE_KARTE"
+    },
+
+    {
+      "id": 11,
+      "name": "SPORTING",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 3,
+      "price": 140,
+      "rent": 10,
+      "owner": null
+    },
+    {
+      "id": 12,
+      "name": "SPONSOREN",
+      "stadium_level": 0,
+      "type": "utility",
+      "price": 150,
+      "owner": null
+    },
+    {
+      "id": 13,
+      "name": "BENFICA",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 3,
+      "price": 140,
+      "rent": 10,
+      "owner": null
+    },
+    {
+      "id": 14,
+      "name": "FC PORTO",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 3,
+      "price": 160,
+      "rent": 12,
+      "owner": null
+    },
+    {
+      "id": 15,
+      "name": "CANAL+",
+      "type": "TV",
+      "stadium_level": 0,
+      "price": 200,
+      "rent": 25,
+      "owner": null
+    },
+
+    {
+      "id": 16,
+      "name": "MARSEILLE",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 4,
+      "price": 180,
+      "rent": 14,
+      "owner": null
+    },
+    {
+      "id": 17,
+      "name": "PRÄMIECARD",
+      "type": "card",
+      "deck": "PRÄMIE"
+    },
+    {
+      "id": 18,
+      "name": "LYON",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 4,
+      "price": 180,
+      "rent": 14,
+      "owner": null
+    },
+    {
+      "id": 19,
+      "name": "PSG",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 4,
+      "price": 200,
+      "rent": 16,
+      "owner": null
+    },
+
+    {
+      "id": 20,
+      "name": "NATIONCARD",
+      "type": "card",
+      "deck": "NATION"
+    },
+
+    {
+      "id": 21,
+      "name": "VfB STUTTGART",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 5,
+      "price": 220,
+      "rent": 18,
+      "owner": null
+    },
+    {
+      "id": 22,
+      "name": "VARCARD",
+      "type": "card",
+      "deck": "VAR"
+    },
+    {
+      "id": 23,
+      "name": "DORTMUND",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 5,
+      "price": 220,
+      "rent": 18,
+      "owner": null
+    },
+    {
+      "id": 24,
+      "name": "BAYERN MÜNCHEN",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 5,
+      "price": 240,
+      "rent": 20,
+      "owner": null
+    },
+
+    {
+      "id": 25,
+      "name": "DAZN",
+      "type": "TV",
+      "price": 200,
+      "rent": 25,
+      "owner": null
+    },
+
+    {
+      "id": 26,
+      "name": "AC MILAN",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 6,
+      "price": 260,
+      "rent": 22,
+      "owner": null
+    },
+    {
+      "id": 27,
+      "name": "NAPOLI",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 6,
+      "price": 260,
+      "rent": 22,
+      "owner": null
+    },
+    {
+      "id": 28,
+      "name": "SPONSOREN",
+      "type": "utility",
+      "price": 150,
+      "owner": null
+    },
+    {
+      "id": 29,
+      "name": "INTER",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 6,
+      "price": 280,
+      "rent": 24,
+      "owner": null
+    },
+
+    {
+      "id": 30,
+      "name": "ROTE_KARTE",
+      "type": "ROTE_KARTE"
+    },
+
+    {
+      "id": 31,
+      "name": "MANCHESTER UNITED",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 7,
+      "price": 300,
+      "rent": 26,
+      "owner": null
+    },
+    {
+      "id": 32,
+      "name": "LIVERPOOL",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 7,
+      "price": 300,
+      "rent": 26,
+      "owner": null
+    },
+    {
+      "id": 33,
+      "name": "PRÄMIECARD",
+      "type": "card",
+      "deck": "PRÄMIE"
+    },
+    {
+      "id": 34,
+      "name": "MANCHESTER CITY",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 7,
+      "price": 320,
+      "rent": 28,
+      "owner": null
+    },
+
+    {
+      "id": 35,
+      "name": "SKY",
+      "type": "TV",
+      "price": 200,
+      "rent": 25,
+      "owner": null
+    },
+
+    {
+      "id": 36,
+      "name": "PRÄMIECARD",
+      "type": "card",
+      "deck": "PRÄMIE"
+    },
+
+    {
+      "id": 37,
+      "name": "REAL MADRID",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 8,
+      "price": 350,
+      "rent": 35,
+      "owner": null
+    },
+    {
+      "id": 38,
+      "name": "Luxussteuer",
+      "type": "tax",
+      "effect": 150
+    },
+    {
+      "id": 39,
+      "name": "FC BARCELONA",
+      "type": "property",
+      "stadium_level": 0,
+      "group": 8,
+      "price": 400,
+      "rent": 50,
+      "owner": null
+    }
+  ]
+}
