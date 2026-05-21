@@ -1,0 +1,280 @@
+import pygame
+import sys
+import random
+import json
+
+WIDTH, HEIGHT = 800, 800
+BOARD_SIZE = 600
+TILE_SIZE = BOARD_SIZE // 11
+FPS = 60
+
+WHITE = (255, 255, 255)
+GREEN = (34, 139, 34)
+BLACK = (0, 0, 0)
+RED   = (200, 0, 0)
+BLUE  = (0, 0, 200)
+
+COLORS = {
+    "group_1": (128, 0, 128),
+    "group_2": (255, 165, 0),
+    "group_3": (64, 224, 208),
+    "group_4": (173, 216, 230),
+    "group_5": (255, 0, 0),
+    "group_6": (255, 255, 0),
+    "group_7": (255, 192, 203),
+    "group_8": (0, 0, 139),
+    "TV":      (0, 0, 0),
+    "card":    (0, 255, 0),
+    "utility": (169, 169, 169),
+    "default": (200, 200, 200)
+}
+
+
+class Field:
+    def __init__(self, data, x, y):
+        self.data  = data
+        self.name  = data["name"]
+        self.rect  = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
+        self.owner = data.get("owner")
+        self.price = data.get("price", 0)
+        self.rent  = data.get("rent", 0)
+        f_type = data.get("type")
+        group  = data.get("group")
+        if f_type == "property" and group:
+            self.color = COLORS.get(f"group_{group}", COLORS["default"])
+        else:
+            self.color = COLORS.get(f_type, COLORS["default"])
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, WHITE, self.rect)
+        pygame.draw.rect(surface, self.color, pygame.Rect(self.rect.x, self.rect.y, TILE_SIZE, 15))
+        pygame.draw.rect(surface, BLACK, self.rect, 2)
+        font = pygame.font.SysFont("Arial", 10, bold=True)
+        surface.blit(font.render(self.name[:10], True, BLACK), (self.rect.x + 5, self.rect.y + 20))
+        if self.owner:
+            f2 = pygame.font.SysFont("Arial", 9, bold=True)
+            surface.blit(f2.render(f"P: {self.owner}", True, (50, 50, 50)), (self.rect.x + 5, self.rect.y + TILE_SIZE - 12))
+
+
+class Player:
+    def __init__(self, name, color, id_num):
+        self.name   = name
+        self.color  = color
+        self.id_num = id_num
+        self.position = 0
+        self.money    = 1500
+        self.vereine  = []
+
+    def draw(self, surface, fields):
+        center = fields[self.position].rect.center
+        offset_x = -10 if self.id_num == 1 else 10
+        pygame.draw.circle(surface, self.color, (center[0] + offset_x, center[1]), 12)
+
+
+class MonopolyGUI:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Fußball-Monopoly Prototyp")
+        self.clock       = pygame.time.Clock()
+        self.font        = pygame.font.SysFont("Arial", 22)
+        self.dialog_font = pygame.font.SysFont("Arial", 18)
+
+        with open('football_nations_monopoly.json', 'r', encoding='utf-8') as f:
+            self.nations_data = json.load(f)
+        with open('cards.json', 'r', encoding='utf-8') as f:
+            self.cards = json.load(f)["cards"]
+
+        self.active_card = None  # aktuell gezogene Karte
+        self.show_nation_selection = False
+        self.selectable_nations    = []
+
+        self.players = [Player("Spieler 1", RED, 1), Player("Spieler 2", BLUE, 2)]
+        self.current_player_idx = 0
+        self.fields = self._generate_fields()
+
+        self.active_buy_prompt   = False
+        self.current_field_to_buy = None
+
+        self.laden()
+
+    def _generate_fields(self):
+        with open('spielfeld.json', 'r', encoding='utf-8') as f:
+            board_data = json.load(f)["board"]
+        fields = [None] * 40
+        offset = (WIDTH - BOARD_SIZE) // 2
+        for data in board_data:
+            i = data["id"]
+            if   0 <= i <= 10: x, y = offset + BOARD_SIZE - (i + 1) * TILE_SIZE, offset + BOARD_SIZE - TILE_SIZE
+            elif 11 <= i <= 20: x, y = offset, offset + BOARD_SIZE - ((i - 10) + 1) * TILE_SIZE
+            elif 21 <= i <= 30: x, y = offset + (i - 20) * TILE_SIZE, offset
+            else:               x, y = offset + BOARD_SIZE - TILE_SIZE, offset + (i - 30) * TILE_SIZE
+            fields[i] = Field(data, x, y)
+        return fields
+
+    def speichern(self, dateiname="spielstand.json"):
+        daten = {
+            "current_player_idx": self.current_player_idx,
+            "players": [{"position": p.position, "money": p.money, "vereine": p.vereine} for p in self.players],
+            "field_owners": {str(i): f.owner for i, f in enumerate(self.fields) if f is not None}
+        }
+        with open(dateiname, "w", encoding="utf-8") as datei:
+            json.dump(daten, datei, indent=4, ensure_ascii=False)
+        print("💾 Spielstand gespeichert!")
+
+    def laden(self, dateiname="spielstand.json"):
+        try:
+            with open(dateiname, "r", encoding="utf-8") as datei:
+                daten = json.load(datei)
+        except FileNotFoundError:
+            print("Kein gespeicherter Spielstand gefunden – neues Spiel startet.")
+            return
+        self.current_player_idx = daten["current_player_idx"]
+        for p, pd in zip(self.players, daten["players"]):
+            p.position, p.money, p.vereine = pd["position"], pd["money"], pd["vereine"]
+        for idx_str, owner in daten["field_owners"].items():
+            self.fields[int(idx_str)].owner = owner
+        print("✅ Spielstand geladen!")
+
+    def neu_starten(self):
+        import os
+        if os.path.exists("spielstand.json"):
+            os.remove("spielstand.json")
+        for p in self.players:
+            p.position, p.money, p.vereine = 0, 1500, []
+        self.fields = self._generate_fields()
+        self.current_player_idx   = 0
+        self.active_buy_prompt    = False
+        self.current_field_to_buy = None
+        print("🔄 Neues Spiel gestartet!")
+
+    def handle_field_landing(self, player):
+        field  = self.fields[player.position]
+        f_type = field.data.get("type")
+        if f_type in ["property", "TV"]:
+            if field.owner is None:
+                self.active_buy_prompt    = True
+                self.current_field_to_buy = field
+            elif field.owner != player.name:
+                player.money -= field.rent
+                for p in self.players:
+                    if p.name == field.owner:
+                        p.money += field.rent
+                print(f"{player.name} bezahlt {field.rent}€ Miete an {field.owner} für {field.name}.")
+        elif f_type == "card":
+            deck = field.data.get("deck")
+            if deck == "NATION":
+                nation = random.choice(self.nations_data)
+                self.active_card = f"{nation['name']}: {nation['positive_effect']} | {nation['negative_effect']}"
+            elif deck in self.cards:
+                karte = random.choice(self.cards[deck])
+                if "value" in karte:
+                    player.money += karte["value"]
+                self.active_card = karte["effekt"]
+
+    def draw_card_dialog(self):
+        if not self.active_card:
+            return
+        dialog_rect = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 60, 400, 120)
+        pygame.draw.rect(self.screen, (245, 245, 245), dialog_rect, border_radius=8)
+        pygame.draw.rect(self.screen, BLACK, dialog_rect, 2, border_radius=8)
+        # Text umbrechen falls zu lang
+        words = self.active_card.split()
+        lines, line = [], ""
+        for w in words:
+            if self.dialog_font.size(line + w)[0] < 360:
+                line += w + " "
+            else:
+                lines.append(line)
+                line = w + " "
+        lines.append(line)
+        for i, l in enumerate(lines):
+            self.screen.blit(self.dialog_font.render(l, True, BLACK), (dialog_rect.x + 20, dialog_rect.y + 15 + i * 25))
+        self.screen.blit(self.dialog_font.render("[Beliebige Taste]", True, (0, 100, 0)), (dialog_rect.x + 20, dialog_rect.y + 90))
+
+    def draw_buy_dialog(self):
+        if not self.active_buy_prompt:
+            return
+        dialog_rect = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 2 - 75, 300, 150)
+        pygame.draw.rect(self.screen, (245, 245, 245), dialog_rect, border_radius=8)
+        pygame.draw.rect(self.screen, BLACK, dialog_rect, 2, border_radius=8)
+        field  = self.current_field_to_buy
+        p_name = self.players[self.current_player_idx].name
+        self.screen.blit(self.dialog_font.render(f"{p_name} gelandet auf:",        True, BLACK),       (dialog_rect.x + 20, dialog_rect.y + 20))
+        self.screen.blit(self.dialog_font.render(f"{field.name} ({field.price}€)", True, BLACK),       (dialog_rect.x + 20, dialog_rect.y + 50))
+        self.screen.blit(self.dialog_font.render("[J] Kaufen  /  [N] Ablehnen",    True, (0, 100, 0)), (dialog_rect.x + 20, dialog_rect.y + 100))
+
+    def next_player(self):
+        self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
+        self.speichern()
+
+    def run(self):
+        while True:
+            self.screen.fill(WHITE)
+            current_player = self.players[self.current_player_idx]
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.speichern()
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if self.active_card:
+                        self.active_card = None
+                        self.next_player()
+
+                    elif self.active_buy_prompt:
+                        if event.key == pygame.K_j:
+                            if current_player.money >= self.current_field_to_buy.price:
+                                current_player.money -= self.current_field_to_buy.price
+                                self.current_field_to_buy.owner = current_player.name
+                                current_player.vereine.append(self.current_field_to_buy.name)
+                                print(f"{current_player.name} kauft {self.current_field_to_buy.name}!")
+                            else:
+                                print("Nicht genug Geld!")
+                            self.active_buy_prompt    = False
+                            self.current_field_to_buy = None
+                            self.next_player()
+
+                        elif event.key == pygame.K_n:
+                            self.active_buy_prompt    = False
+                            self.current_field_to_buy = None
+                            self.next_player()
+
+                    elif event.key == pygame.K_SPACE:
+                        current_player.position = (current_player.position + random.randint(1, 6) + random.randint(1, 6)) % len(self.fields)
+                        self.handle_field_landing(current_player)
+                        if not self.active_buy_prompt:
+                            self.next_player()
+
+                    elif event.key == pygame.K_s:
+                        self.speichern()
+
+                    elif event.key == pygame.K_r:
+                        self.neu_starten()
+
+            pygame.draw.rect(self.screen, GREEN, ((WIDTH - BOARD_SIZE) // 2, (HEIGHT - BOARD_SIZE) // 2, BOARD_SIZE, BOARD_SIZE))
+            for f in self.fields:
+                f.draw(self.screen)
+            for p in self.players:
+                p.draw(self.screen, self.fields)
+
+            offset = (HEIGHT - BOARD_SIZE) // 2
+            self.screen.blit(self.font.render(f"Dran: {self.players[self.current_player_idx].name} (Leertaste)", True, BLACK), (20, offset - 30))
+
+            y = offset + BOARD_SIZE + 10
+            for p in self.players:
+                self.screen.blit(self.font.render(f"{p.name}: {p.money}€  |  Feld: {self.fields[p.position].name}", True, p.color), (20, y))
+                y += 30
+            self.screen.blit(self.font.render("[S] Speichern  |  [R] Neu starten", True, BLACK), (20, y + 5))
+
+            self.draw_buy_dialog()
+            self.draw_card_dialog()
+            pygame.display.flip()
+            self.clock.tick(FPS)
+
+
+if __name__ == "__main__":
+    MonopolyGUI().run()
+
