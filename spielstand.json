@@ -1,0 +1,16 @@
+{
+    "current_player_idx": 0,
+    "players": [
+        {
+            "position": 0,
+            "money": 1500,
+            "vereine": []
+        },
+        {
+            "position": 0,
+            "money": 1500,
+            "vereine": []
+        }
+    ],
+    "field_owners": {}
+}

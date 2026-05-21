@@ -77,6 +77,6 @@ class Spiel:
             print(f"\nName: {spieler.name}")
             print(f"Nation: {spieler.nation}")
             print(f"Position: {spieler.position}")
-            print(f"Kontostand: {spieler.kontostand} Mio")
+            print(f"Kontostand: {spieler.kontostand}")
             print(f"Vereine: {spieler.vereine}")
             print(f"Karten: {spieler.karten}")
