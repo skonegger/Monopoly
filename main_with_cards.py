@@ -57,7 +57,6 @@ class Field:
             (self.rect.x + 4, self.rect.y + 18)
         )
 
-        # Besitzer anzeigen
         if self.owner:
 
             owner = font.render(
@@ -84,10 +83,14 @@ class Player:
         self.position = 0
         self.money = 1500
 
-        # Pasch-System
         self.double_count = 0
+        self.alive = True
+
 
     def draw(self, screen, fields):
+
+        if not self.alive:
+            return
 
         center = fields[self.position].rect.center
 
@@ -118,17 +121,9 @@ class MonopolyGUI:
 
         self.clock = pygame.time.Clock()
 
-        self.font = pygame.font.SysFont(
-            "Arial",
-            22
-        )
+        self.font = pygame.font.SysFont("Arial", 22)
+        self.small_font = pygame.font.SysFont("Arial", 16)
 
-        self.small_font = pygame.font.SysFont(
-            "Arial",
-            16
-        )
-
-        # Spieler
         self.players = [
             Player("Rot", RED, 1),
             Player("Blau", BLUE, 2)
@@ -136,40 +131,23 @@ class MonopolyGUI:
 
         self.current = 0
 
-        # Spielfeld
         self.fields = self.load_board()
-
-        # Karten
         self.cards = self.load_cards()
 
-        # Zustände:
-        # IDLE
-        # BUY
-        # MESSAGE
         self.state = "IDLE"
-
         self.message = None
         self.buy_field = None
 
-        # Würfelanzeige
         self.last_dice_text = ""
-
-        # Pasch
         self.last_roll_was_double = False
 
     # ================= LOAD =================
     def load_board(self):
 
-        with open(
-            "spielfeld.json",
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open("spielfeld.json", "r", encoding="utf-8") as f:
             board = json.load(f)["board"]
 
         fields = [None] * 40
-
         offset = (WIDTH - BOARD_SIZE) // 2
 
         for data in board:
@@ -177,36 +155,20 @@ class MonopolyGUI:
             i = data["id"]
 
             if 0 <= i <= 10:
-
-                x = offset + BOARD_SIZE - (
-                    i + 1
-                ) * TILE_SIZE
-
+                x = offset + BOARD_SIZE - (i + 1) * TILE_SIZE
                 y = offset + BOARD_SIZE - TILE_SIZE
 
             elif 11 <= i <= 20:
-
                 x = offset
-
-                y = offset + BOARD_SIZE - (
-                    (i - 10) + 1
-                ) * TILE_SIZE
+                y = offset + BOARD_SIZE - ((i - 10) + 1) * TILE_SIZE
 
             elif 21 <= i <= 30:
-
-                x = offset + (
-                    i - 20
-                ) * TILE_SIZE
-
+                x = offset + (i - 20) * TILE_SIZE
                 y = offset
 
             else:
-
                 x = offset + BOARD_SIZE - TILE_SIZE
-
-                y = offset + (
-                    i - 30
-                ) * TILE_SIZE
+                y = offset + (i - 30) * TILE_SIZE
 
             fields[i] = Field(data, x, y)
 
@@ -214,138 +176,79 @@ class MonopolyGUI:
 
     def load_cards(self):
 
-        with open(
-            "cards.json",
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open("cards.json", "r", encoding="utf-8") as f:
             return json.load(f)["cards"]
 
-    # ================= MESSAGE =================
+    # ================= UTILS =================
     def show_message(self, text):
-
         self.message = text
 
-    # ================= NEXT PLAYER =================
     def next_player(self):
+        self.current = (self.current + 1) % len(self.players)
 
-        self.current = (
-            self.current + 1
-        ) % len(self.players)
+    def check_loss(self, player):
+
+        if player.money < 0:
+            player.alive = False
+            self.show_message(f"{player.name} ist pleite!\nSpiel verloren.")
+            self.state = "MESSAGE"
 
     # ================= CARDS =================
     def draw_card(self, player, typ):
 
-        card = random.choice(
-            self.cards[typ]
-        )
-
+        card = random.choice(self.cards[typ])
         self.apply_card(player, card)
 
-        self.show_message(
-            card["effekt"]
-        )
-
+        self.show_message(card["effekt"])
         self.state = "MESSAGE"
 
     def apply_card(self, player, card):
 
-        text = card["effekt"]
-
-        # Geld
         if "value" in card:
-
             player.money += card["value"]
 
-            # ❌ KEIN NEGATIVES GELD
-            if player.money < 0:
-                player.money = 0
-
-        # Bewegung
-        if "Gehe 3 Felder zurück" in text:
-
-            player.position = (
-                player.position - 3
-            ) % len(self.fields)
-
-        elif "Gehe 2 Felder zurück" in text:
-
-            player.position = (
-                player.position - 2
-            ) % len(self.fields)
-
-        elif "Gehe 1 Feld zurück" in text:
-
-            player.position = (
-                player.position - 1
-            ) % len(self.fields)
+        self.check_loss(player)
 
     # ================= LAND =================
     def land(self, player):
 
-        field = self.fields[
-            player.position
-        ]
+        field = self.fields[player.position]
+        ftype = field.data.get("type")
 
-        field_type = field.data.get("type")
-
-        # 🎴 KARTEN
-        if field_type == "card":
+        if ftype == "card":
 
             if field.name.upper() == "VAR":
-
-                self.draw_card(
-                    player,
-                    "VAR"
-                )
-
+                self.draw_card(player, "VAR")
             else:
-
-                self.draw_card(
-                    player,
-                    "PRÄMIE"
-                )
+                self.draw_card(player, "PRÄMIE")
 
             return
 
-        # 🏟 VEREIN
-        if field_type in ["property", "TV"]:
+        if ftype in ["property", "TV"]:
 
-            # Frei
             if field.owner is None:
 
                 self.buy_field = field
-
                 self.show_message(
-                    f"{player.name}: {field.name} kaufen?\n"
-                    f"Preis: {field.price}€"
+                    f"{player.name}: {field.name} kaufen?\n{field.price}€"
                 )
-
                 self.state = "BUY"
 
-            # Miete
             elif field.owner != player.name:
 
                 rent = field.rent
-
-                # ❌ KEIN GAME OVER
-                payment = min(
-                    player.money,
-                    rent
-                )
+                payment = min(player.money, rent)
 
                 player.money -= payment
 
                 for p in self.players:
-
                     if p.name == field.owner:
                         p.money += payment
 
+                self.check_loss(player)
+
                 self.show_message(
-                    f"{player.name} zahlt "
-                    f"{payment}€ an "
-                    f"{field.owner}"
+                    f"{player.name} zahlt {payment}€ an {field.owner}"
                 )
 
                 self.state = "MESSAGE"
@@ -353,67 +256,37 @@ class MonopolyGUI:
     # ================= DICE =================
     def roll_dice(self):
 
-        player = self.players[
-            self.current
-        ]
+        player = self.players[self.current]
 
-        dice1 = random.randint(1, 6)
-        dice2 = random.randint(1, 6)
-
-        steps = dice1 + dice2
-
-        # 🎲 Würfelanzeige
-        self.last_dice_text = (
-            f"{dice1}+{dice2}={steps}"
-        )
-
-        # 🎲 PASCH
-        pasch = dice1 == dice2
-
-        self.last_roll_was_double = pasch
-
-        if pasch:
-            player.double_count += 1
-        else:
-            player.double_count = 0
-
-        # 🚔 3 Pasche
-        if player.double_count >= 3:
-
-            player.double_count = 0
-
-            self.show_message(
-                f"{player.name} hatte "
-                f"3 Pasche!"
-            )
-
-            self.state = "MESSAGE"
-
+        if not player.alive:
+            self.next_player()
             return
 
-        # Bewegung
-        player.position = (
-            player.position + steps
-        ) % len(self.fields)
+        d1 = random.randint(1, 6)
+        d2 = random.randint(1, 6)
 
-        # Feldaktion
+        steps = d1 + d2
+        self.last_dice_text = f"{d1}+{d2}={steps}"
+
+        old = player.position
+
+        player.position = (player.position + steps) % len(self.fields)
+
+        # ================= LOS =================
+        if old + steps >= len(self.fields):
+            player.money += 200
+            self.show_message(f"{player.name} über LOS!\n+200€")
+            self.state = "MESSAGE"
+
+        if player.position == 0:
+            player.money += 400
+            self.show_message(f"{player.name} auf LOS!\n+400€")
+            self.state = "MESSAGE"
+
         self.land(player)
 
-        # Wenn nix passiert
         if self.state == "IDLE":
-
-            if pasch:
-
-                self.show_message(
-                    "PASCH!\n"
-                    "Nochmal würfeln."
-                )
-
-                self.state = "MESSAGE"
-
-            else:
-
-                self.next_player()
+            self.next_player()
 
     # ================= INPUT =================
     def handle_input(self, event):
@@ -421,75 +294,45 @@ class MonopolyGUI:
         if event.type != pygame.KEYDOWN:
             return
 
-        player = self.players[
-            self.current
-        ]
+        player = self.players[self.current]
 
-        # ================= MESSAGE =================
+        # MESSAGE
         if self.state == "MESSAGE":
 
             if event.key == pygame.K_j:
-
                 self.message = None
-
-                # Pasch
-                if self.last_roll_was_double:
-
-                    self.last_roll_was_double = False
-
-                    self.state = "IDLE"
-
-                else:
-
-                    self.state = "IDLE"
-
-                    self.next_player()
+                self.state = "IDLE"
+                self.next_player()
 
             return
 
-        # ================= BUY =================
+        # BUY (FIXED CRASH SAFE)
         if self.state == "BUY":
 
-            # JA
+            if self.buy_field is None:
+                self.state = "IDLE"
+                return
+
             if event.key == pygame.K_j:
 
                 if player.money >= self.buy_field.price:
-
                     player.money -= self.buy_field.price
-
                     self.buy_field.owner = player.name
 
-                    self.show_message(
-                        f"{player.name} kauft\n"
-                        f"{self.buy_field.name}"
-                    )
-
-                else:
-
-                    self.show_message(
-                        "Nicht genug Geld!"
-                    )
-
                 self.state = "MESSAGE"
+                self.buy_field = None
 
-            # NEIN
             elif event.key == pygame.K_n:
 
-                self.show_message(
-                    "Nicht gekauft."
-                )
-
                 self.state = "MESSAGE"
-
-            self.buy_field = None
+                self.buy_field = None
 
             return
 
-        # ================= IDLE =================
+        # IDLE
         if self.state == "IDLE":
 
             if event.key == pygame.K_SPACE:
-
                 self.roll_dice()
 
     # ================= UI =================
@@ -497,7 +340,6 @@ class MonopolyGUI:
 
         y = 10
 
-        # Geld
         for p in self.players:
 
             txt = self.font.render(
@@ -506,62 +348,35 @@ class MonopolyGUI:
                 p.color
             )
 
-            self.screen.blit(
-                txt,
-                (20, y)
-            )
-
+            self.screen.blit(txt, (20, y))
             y += 30
 
-        # Spieler dran
         turn = self.font.render(
             f"Dran: {self.players[self.current].name}",
             True,
             BLACK
         )
 
-        self.screen.blit(
-            turn,
-            (20, y + 10)
-        )
+        self.screen.blit(turn, (20, y + 10))
 
-        # 🎲 Würfelanzeige
         dice = self.font.render(
             f"Wurf: {self.last_dice_text}",
             True,
             BLACK
         )
 
-        self.screen.blit(
-            dice,
-            (20, y + 45)
-        )
+        self.screen.blit(dice, (WIDTH - 200, 20))
 
-    # ================= MESSAGE BOX =================
+    # ================= MESSAGE =================
     def draw_message_box(self):
 
         if not self.message:
             return
 
-        box = pygame.Rect(
-            150,
-            520,
-            500,
-            150
-        )
+        box = pygame.Rect(150, 520, 500, 150)
 
-        pygame.draw.rect(
-            self.screen,
-            DARK,
-            box
-        )
-
-        pygame.draw.rect(
-            self.screen,
-            WHITE,
-            box,
-            2
-        )
+        pygame.draw.rect(self.screen, DARK, box)
+        pygame.draw.rect(self.screen, WHITE, box, 2)
 
         lines = self.message.split("\n")
 
@@ -569,57 +384,12 @@ class MonopolyGUI:
 
         for line in lines:
 
-            txt = self.small_font.render(
-                line,
-                True,
-                WHITE
-            )
-
-            self.screen.blit(
-                txt,
-                (170, y)
-            )
-
+            txt = self.small_font.render(line, True, WHITE)
+            self.screen.blit(txt, (170, y))
             y += 28
 
-        # BUY
-        if self.state == "BUY":
-
-            yes = self.small_font.render(
-                "J = JA",
-                True,
-                (0, 255, 0)
-            )
-
-            no = self.small_font.render(
-                "N = NEIN",
-                True,
-                (255, 0, 0)
-            )
-
-            self.screen.blit(
-                yes,
-                (170, 630)
-            )
-
-            self.screen.blit(
-                no,
-                (320, 630)
-            )
-
-        # MESSAGE
-        else:
-
-            ok = self.small_font.render(
-                "J = OK",
-                True,
-                (0, 255, 0)
-            )
-
-            self.screen.blit(
-                ok,
-                (170, 630)
-            )
+        ok = self.small_font.render("J = OK", True, WHITE)
+        self.screen.blit(ok, (170, 630))
 
     # ================= MAIN LOOP =================
     def run(self):
@@ -628,17 +398,14 @@ class MonopolyGUI:
 
             self.screen.fill(WHITE)
 
-            # EVENTS
             for event in pygame.event.get():
 
                 if event.type == pygame.QUIT:
-
                     pygame.quit()
                     sys.exit()
 
                 self.handle_input(event)
 
-            # BOARD
             pygame.draw.rect(
                 self.screen,
                 GREEN,
@@ -650,33 +417,20 @@ class MonopolyGUI:
                 )
             )
 
-            # FIELDS
-            for field in self.fields:
+            for f in self.fields:
+                if f:
+                    f.draw(self.screen)
 
-                if field:
-                    field.draw(self.screen)
+            for p in self.players:
+                p.draw(self.screen, self.fields)
 
-            # PLAYERS
-            for player in self.players:
-
-                player.draw(
-                    self.screen,
-                    self.fields
-                )
-
-            # UI
             self.draw_ui()
-
-            # MESSAGE
             self.draw_message_box()
 
             pygame.display.flip()
-
             self.clock.tick(FPS)
 
 
-# ================= START =================
 if __name__ == "__main__":
-
     game = MonopolyGUI()
     game.run()
