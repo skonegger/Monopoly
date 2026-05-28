@@ -20,7 +20,7 @@
       {
         "id": 4,
         "effekt": "Tor aberkannt wegen Abseits. Gehe 3 Felder zurück.",
-        "value": -3
+        "action": -3
       },
       {
         "id": 5,
@@ -60,7 +60,7 @@
       {
         "id": 12,
         "effekt": "Abseits falsch gelesen. Gehe 2 Felder zurück.",
-        "value": -2
+        "action": -2
       },
       {
         "id": 13,
