@@ -11,8 +11,6 @@ class Player:
         self.vereine  = []
         self.double_count  = 0
         self.turns_to_skip = 0  # Runden aussetzen Zähler
-
-        # --- NEU: Gefängnis- & Karten-Features ---
         self.yellow_cards = 0       # Zähler für gelbe Karten (bei 2 -> Gefängnis)
         self.is_in_jail = False     # Ist der Spieler aktuell im Gefängnis?
         self.jail_turns = 0         # Wie viele Runden schon im Gefängnis (max. 3)

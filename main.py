@@ -100,7 +100,7 @@ class MonopolyGUI:
         self.fields = self.load_board()
         
         self.state = "IDLE"
-        self.has_rolled = False 
+        self.has_rolled = False  
         self.message = None
         self.buy_field = None
         self.last_dice_text = ""
@@ -109,6 +109,11 @@ class MonopolyGUI:
         
         self.buildable_fields = []
         self.build_index = 0
+        self.trade_give_money = 0
+        self.trade_take_money = 0
+        self.trade_give_prop_idx = -1  # -1 bedeutet kein Verein ausgewählt
+        self.trade_take_prop_idx = -1
+        self.trade_cursor = 0          # Steuert die ausgewählte Zeile im Tauschmenü
         
         self.laden()
 
@@ -145,13 +150,13 @@ class MonopolyGUI:
         player.is_in_jail = True
         player.jail_turns = 0
         player.yellow_cards = 0
-        self.has_rolled = True  # Zug endet nach Platzverweis automatisch
+        self.has_rolled = True  
         self.show_message(f"ROTE KARTE / PLATZVERWEIS!\n{player.name} muss sofort auf die Strafbank (Feld 10).")
         self.state = "MESSAGE"
 
     def next_player(self):
         self.current = (self.current + 1) % len(self.players)
-        self.has_rolled = False  # Setzt Würfel-Flag für den nächsten Spieler zurück
+        self.has_rolled = False  
         self.speichern()
 
     def speichern(self, dateiname="spielstand.json"):
@@ -228,7 +233,6 @@ class MonopolyGUI:
         self.state = "MESSAGE"
 
     def land(self, player, passed_go=False):
-        # Text-Prefix erstellen, falls man über Los gelaufen ist
         prefix = "Über Los gegangen! Prämie von +200€ erhalten.\n\n" if passed_go else ""
 
         if player.position == 30:
@@ -260,7 +264,6 @@ class MonopolyGUI:
                 self.show_message(prefix + f"{player.name} bezahlt {payment}€ Miete (Stufe {field.stadium_level})\nan {field.owner} für {field.name}.")
                 self.state = "MESSAGE"
         else:
-            # Falls man auf einem Eckfeld/Ereignisfeld landet, das keine Aktion triggert, aber über Los kam
             if passed_go:
                 self.show_message(f"Über Los gegangen! (+200€)\nDu landest auf {field.name}.")
                 self.state = "MESSAGE"
@@ -322,21 +325,19 @@ class MonopolyGUI:
             self.send_to_jail(player)
             return
 
-        # --- NEU: "Über Los"-Logik berechnen ---
         old_position = player.position
         player.position = (player.position + steps) % len(self.fields)
-        passed_go = player.position < old_position  # Index-Umlauf bedeutet über Los gelaufen!
+        passed_go = player.position < old_position  
         
         if passed_go:
             player.money += 200
 
-        # Bestimmen ob der Zug nach der Aktion vorbei ist oder man nochmal würfeln darf (Pasch)
         if pasch:
-            self.has_rolled = False  # Bei Pasch darf man nachher direkt nochmal werfen
+            self.has_rolled = False  
             self.show_message(f"PASCH! {d1}+{d2}.\nDu darfst nach der Aktion noch einmal würfeln!")
             self.state = "MESSAGE"
         else:
-            self.has_rolled = True   # Normaler Wurf -> Zug blockiert, bis [E] gedrückt wird
+            self.has_rolled = True   
 
         self.land(player, passed_go=passed_go)
 
@@ -345,6 +346,77 @@ class MonopolyGUI:
             return
 
         player = self.players[self.current]
+
+        other_player = self.players[(self.current + 1) % len(self.players)]
+        if self.state == "TRADE_MENU":
+            current_props = player.vereine
+            other_props = other_player.vereine
+
+            if event.key == pygame.K_UP:
+                self.trade_cursor = (self.trade_cursor - 1) % 5
+            elif event.key == pygame.K_DOWN:
+                self.trade_cursor = (self.trade_cursor + 1) % 5
+            elif event.key == pygame.K_LEFT:
+                if self.trade_cursor == 0:   self.trade_give_money = max(0, self.trade_give_money - 10)
+                elif self.trade_cursor == 1: self.trade_give_prop_idx = max(-1, self.trade_give_prop_idx - 1)
+                elif self.trade_cursor == 2: self.trade_take_money = max(0, self.trade_take_money - 10)
+                elif self.trade_cursor == 3: self.trade_take_prop_idx = max(-1, self.trade_take_prop_idx - 1)
+            elif event.key == pygame.K_RIGHT:
+                if self.trade_cursor == 0:   self.trade_give_money = min(player.money, self.trade_give_money + 10)
+                elif self.trade_cursor == 1:
+                    if current_props:        self.trade_give_prop_idx = min(len(current_props) - 1, self.trade_give_prop_idx + 1)
+                elif self.trade_cursor == 2: self.trade_take_money = min(other_player.money, self.trade_take_money + 10)
+                elif self.trade_cursor == 3:
+                    if other_props:          self.trade_take_prop_idx = min(len(other_props) - 1, self.trade_take_prop_idx + 1)
+            elif event.key == pygame.K_j or event.key == pygame.K_RETURN:
+                if self.trade_cursor == 4 or event.key == pygame.K_RETURN:
+                    if self.trade_give_money == 0 and self.trade_give_prop_idx == -1 and self.trade_take_money == 0 and self.trade_take_prop_idx == -1:
+                        self.show_message("Das Angebot ist leer!")
+                        self.state = "MESSAGE"
+                    else:
+                        self.state = "TRADE_DECISION"
+            elif event.key == pygame.K_e or event.key == pygame.K_ESCAPE:
+                self.state = "IDLE"
+            return
+
+        if self.state == "TRADE_DECISION":
+            if event.key == pygame.K_j:
+                if player.money < self.trade_give_money:
+                    self.show_message(f"{player.name} hat nicht mehr genug Geld!")
+                    self.state = "MESSAGE"
+                elif other_player.money < self.trade_take_money:
+                    self.show_message(f"{other_player.name} hat nicht genug Geld!")
+                    self.state = "MESSAGE"
+                else:
+                    # Geld transferieren
+                    player.money -= self.trade_give_money
+                    other_player.money += self.trade_give_money
+                    player.money += self.trade_take_money
+                    other_player.money -= self.trade_take_money
+                    
+                    # Angebotenen Verein transferieren
+                    if self.trade_give_prop_idx >= 0 and self.trade_give_prop_idx < len(player.vereine):
+                        p_name = player.vereine[self.trade_give_prop_idx]
+                        player.vereine.remove(p_name)
+                        other_player.vereine.append(p_name)
+                        for f in self.fields:
+                            if f and f.name == p_name: f.owner = other_player.name
+                            
+                    # Geforderten Verein transferieren
+                    if self.trade_take_prop_idx >= 0 and self.trade_take_prop_idx < len(other_player.vereine):
+                        p_name = other_player.vereine[self.trade_take_prop_idx]
+                        other_player.vereine.remove(p_name)
+                        player.vereine.append(p_name)
+                        for f in self.fields:
+                            if f and f.name == p_name: f.owner = player.name
+                            
+                    self.show_message("Tausch erfolgreich abgeschlossen!")
+                    self.state = "MESSAGE"
+                    self.speichern()
+            elif event.key == pygame.K_n:
+                self.show_message("Angebot wurde abgelehnt.")
+                self.state = "MESSAGE"
+            return
 
         if self.state == "MESSAGE":
             if event.key == pygame.K_j:
@@ -382,13 +454,13 @@ class MonopolyGUI:
                 if player.has_jail_free_card > 0:
                     player.has_jail_free_card -= 1
                     player.is_in_jail = False
-                    self.has_rolled = False  # Erlaubt das Würfeln in dieser Runde
+                    self.has_rolled = False  
                     self.show_message(f"{player.name} nutzt die Freikarte!\nDu kannst jetzt normal würfeln.")
                     self.state = "MESSAGE"
                 elif player.money >= 50:
                     player.money -= 50
                     player.is_in_jail = False
-                    self.has_rolled = False  # Erlaubt das Würfeln in dieser Runde
+                    self.has_rolled = False  
                     self.show_message(f"{player.name} zahlt 50€ Strafe!\nDu kannst jetzt normal würfeln.")
                     self.state = "MESSAGE"
                 else:
@@ -397,7 +469,7 @@ class MonopolyGUI:
                 d1, d2 = random.randint(1, 6), random.randint(1, 6)
                 steps = d1 + d2
                 self.last_dice_text = f"{d1}+{d2}={steps}"
-                self.has_rolled = True  # Strafbank-Versuch zählt als gewürfelt
+                self.has_rolled = True  
                 
                 if d1 == d2:
                     player.is_in_jail = False
@@ -445,9 +517,9 @@ class MonopolyGUI:
                     else:
                         self.show_message(f"{player.name} ist gesperrt!\n[J] 50€ Strafe zahlen\n[N] Pasch versuchen (Runde {player.jail_turns+1}/3)")
                 else:
-                    # Würfeln nur erlauben, wenn noch nicht gewürfelt wurde
                     if not self.has_rolled:
                         self.roll_dice()
+            
             elif event.key == pygame.K_e:
                 if self.has_rolled:
                     self.next_player()
@@ -457,6 +529,14 @@ class MonopolyGUI:
                     
             elif event.key == pygame.K_b:
                 self.open_build_menu()
+            # --- NEU: Tauschmenü aktivieren ---
+            elif event.key == pygame.K_t:
+                self.trade_give_money = 0
+                self.trade_take_money = 0
+                self.trade_give_prop_idx = -1
+                self.trade_take_prop_idx = -1
+                self.trade_cursor = 0
+                self.state = "TRADE_MENU"
             elif event.key == pygame.K_s:
                 self.speichern()
                 self.show_message("Spielstand manuell gespeichert!")
@@ -477,7 +557,6 @@ class MonopolyGUI:
             self.screen.blit(txt, (20, y))
             y += 30
 
-        # Dynamischer UI Text je nach Würfelstatus
         if not self.has_rolled:
             turn_str = f"Dran: {self.players[self.current].name} ([LEERTASTE] zum Würfeln)"
         else:
@@ -489,10 +568,67 @@ class MonopolyGUI:
         dice = self.font.render(f"Wurf: {self.last_dice_text}", True, BLACK)
         self.screen.blit(dice, (20, y + 45))
         
-        shortcuts = self.small_font.render("[SPACE] Würfeln  |  [E] Zug beenden  |  [B] Bauen  |  [S] Save  |  [R] Reset", True, BLACK)
+        shortcuts = self.small_font.render("[SPACE] Würfeln  |  [E] Beenden  |  [B] Bauen  |  [T] Tauschen  |  [S] Save", True, BLACK)
         self.screen.blit(shortcuts, (20, HEIGHT - 35))
 
     def draw_message_box(self):
+        if self.state == "TRADE_MENU":
+            box = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 130, 500, 260)
+            pygame.draw.rect(self.screen, DARK, box, border_radius=8)
+            pygame.draw.rect(self.screen, WHITE, box, 2, border_radius=8)
+            
+            p_cur = self.players[self.current]
+            p_oth = self.players[(self.current + 1) % len(self.players)]
+            
+            g_prop = p_cur.vereine[self.trade_give_prop_idx] if (self.trade_give_prop_idx >= 0 and p_cur.vereine) else "Keiner"
+            t_prop = p_oth.vereine[self.trade_take_prop_idx] if (self.trade_take_prop_idx >= 0 and p_oth.vereine) else "Keiner"
+            
+            rows = [
+                f"Geld bieten: {self.trade_give_money}€  (Max: {p_cur.money}€)",
+                f"Verein bieten: {g_prop}",
+                f"Geld fordern: {self.trade_take_money}€  (Max: {p_oth.money}€)",
+                f"Verein fordern: {t_prop}",
+                "[ ANGEBOT ABSENDEN ]"
+            ]
+            
+            y = box.y + 20
+            for i, row in enumerate(rows):
+                color = (0, 255, 0) if i == self.trade_cursor else WHITE
+                prefix = "> " if i == self.trade_cursor else "  "
+                txt = self.small_font.render(prefix + row, True, color)
+                self.screen.blit(txt, (box.x + 20, y))
+                y += 32
+                
+            help_txt = self.small_font.render("[▲/▼] Zeile  |  [◀/▶] Wert ändern  |  [J/ENTER] Senden  |  [E] Exit", True, (200, 200, 200))
+            self.screen.blit(help_txt, (box.x + 20, box.y + 215))
+            return
+
+        if self.state == "TRADE_DECISION":
+            box = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 110, 500, 220)
+            pygame.draw.rect(self.screen, DARK, box, border_radius=8)
+            pygame.draw.rect(self.screen, WHITE, box, 2, border_radius=8)
+            
+            p_cur = self.players[self.current]
+            p_oth = self.players[(self.current + 1) % len(self.players)]
+            
+            g_prop = p_cur.vereine[self.trade_give_prop_idx] if self.trade_give_prop_idx >= 0 else "Keiner"
+            t_prop = p_oth.vereine[self.trade_take_prop_idx] if self.trade_take_prop_idx >= 0 else "Keiner"
+            
+            lines = [
+                f"TAUSCHANGEBOT von {p_cur.name} an {p_oth.name}:",
+                f"Er bietet dir: {self.trade_give_money}€ & Verein: {g_prop}",
+                f"Er fordert:     {self.trade_take_money}€ & Verein: {t_prop}",
+                "",
+                f"{p_oth.name}, nimmst du an?",
+                "[J] = ANNEHMEN      |      [N] = ABLEHNEN"
+            ]
+            y = box.y + 20
+            for line in lines:
+                txt = self.small_font.render(line, True, WHITE)
+                self.screen.blit(txt, (box.x + 20, y))
+                y += 28
+            return
+
         if not self.message:
             return
 
