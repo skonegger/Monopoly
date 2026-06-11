@@ -1,200 +1,459 @@
-# Client.py
-import pygame
+"""
+Fußball-Monopoly – CLIENT
+Starte diesen Client auf BEIDEN Rechnern (nach dem Server).
+
+    python client.py
+
+Spieler 1 (Host):   verbindet sich mit 10.95.130.45 → wird Spieler 1
+Spieler 2 (Gast):   verbindet sich mit 10.95.130.45 → wird Spieler 2
+
+Steuerung (nur wenn DU dran bist):
+    Leertaste  → Würfeln
+    J          → Feld kaufen
+    N          → Kauf ablehnen
+    Beliebige  → Karte wegklicken
+    R          → Neu starten (für beide)
+"""
+
 import sys
 import socket
-import pickle
 import threading
 import json
-from Shared import GameState
+import struct
 
-WIDTH, HEIGHT = 800, 800
-BOARD_SIZE = 600
-TILE_SIZE = BOARD_SIZE // 11
-FPS = 60
+import pygame
 
-WHITE = (255, 255, 255)
-GREEN = (34, 139, 34)
-BLACK = (0, 0, 0)
+# ---------------------------------------------------------------------------
+# Serveradresse  ← hier anpassen falls nötig
+# ---------------------------------------------------------------------------
+SERVER_IP = "10.95.130.45"
+PORT      = 5555
+
+# ---------------------------------------------------------------------------
+# Fenster & Brett  (identisch mit dem Original)
+# ---------------------------------------------------------------------------
+WIDTH, HEIGHT = 900, 900
+FPS           = 60
+
+TILE_SIZE  = 75
+INNER_SIZE = 360
+BOARD_SIZE = INNER_SIZE + 2 * TILE_SIZE   # 510
+SIDE_TILE  = INNER_SIZE // 9              # 40
+
+# ---------------------------------------------------------------------------
+# Farben
+# ---------------------------------------------------------------------------
+WHITE  = (255, 255, 255)
+GREEN  = ( 34, 139,  34)
+BLACK  = (  0,   0,   0)
+RED    = (200,   0,   0)
+BLUE   = (  0,   0, 200)
+GRAY   = (160, 160, 160)
+
+PLAYER_COLORS = [RED, BLUE]
 
 COLORS = {
-    "group_1": (128, 0, 128), "group_2": (255, 165, 0), "group_3": (64, 224, 208),
-    "group_4": (173, 216, 230), "group_5": (255, 0, 0), "group_6": (255, 255, 0),
-    "group_7": (255, 192, 203), "group_8": (0, 0, 139), "TV": (0, 0, 0),
-    "card": (0, 255, 0), "utility": (169, 169, 169), "default": (200, 200, 200)
+    "group_1": (128,   0, 128),
+    "group_2": (255, 165,   0),
+    "group_3": ( 64, 224, 208),
+    "group_4": (173, 216, 230),
+    "group_5": (255,   0,   0),
+    "group_6": (255, 255,   0),
+    "group_7": (255, 192, 203),
+    "group_8": (  0,   0, 139),
+    "TV":      (  0,   0,   0),
+    "card":    (  0, 255,   0),
+    "utility": (169, 169, 169),
+    "default": (200, 200, 200),
 }
 
-SERVER_IP = "10.95.130.45"
-PORT = 5555
 
-class FieldGUI:
-    def __init__(self, data, x, y):
-        self.data = data
-        self.name = data["name"]
-        self.rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
-        self.price = data.get("price", 0)
-        f_type = data.get("type")
-        group = data.get("group")
-        self.color = COLORS.get(f"group_{group}", COLORS["default"]) if f_type == "property" and group else COLORS.get(f_type, COLORS["default"])
+# ---------------------------------------------------------------------------
+# Hilfsfunktionen
+# ---------------------------------------------------------------------------
 
-    def draw(self, surface, owner_name):
-        pygame.draw.rect(surface, WHITE, self.rect)
-        pygame.draw.rect(surface, self.color, pygame.Rect(self.rect.x, self.rect.y, TILE_SIZE, 15))
-        pygame.draw.rect(surface, BLACK, self.rect, 2)
-        font = pygame.font.SysFont("Arial", 10, bold=True)
-        surface.blit(font.render(self.name[:10], True, BLACK), (self.rect.x + 5, self.rect.y + 20))
-        if owner_name:
-            f2 = pygame.font.SysFont("Arial", 9, bold=True)
-            surface.blit(f2.render(f"P: {owner_name}", True, (50, 50, 50)), (self.rect.x + 5, self.rect.y + TILE_SIZE - 12))
+def field_color(f):
+    f_type = f.get("type")
+    group  = f.get("group")
+    if f_type == "property" and group:
+        return COLORS.get(f"group_{group}", COLORS["default"])
+    return COLORS.get(f_type, COLORS["default"])
+
+
+def field_rect(i):
+    """Gibt pygame.Rect für Feld i zurück – identische Logik wie im Original."""
+    off = (WIDTH - BOARD_SIZE) // 2
+    T   = TILE_SIZE
+    S   = SIDE_TILE
+
+    if i == 0:
+        x, y, w, h = off + BOARD_SIZE - T, off + BOARD_SIZE - T, T, T
+    elif 1 <= i <= 9:
+        x = off + T + (9 - i) * S
+        y, w, h = off + BOARD_SIZE - T, S, T
+    elif i == 10:
+        x, y, w, h = off, off + BOARD_SIZE - T, T, T
+    elif 11 <= i <= 19:
+        y = off + T + (9 - (i - 10)) * S
+        x, w, h = off, T, S
+    elif i == 20:
+        x, y, w, h = off, off, T, T
+    elif 21 <= i <= 29:
+        x = off + T + (i - 21) * S
+        y, w, h = off, S, T
+    elif i == 30:
+        x, y, w, h = off + BOARD_SIZE - T, off, T, T
+    else:                      # 31–39
+        y = off + T + (i - 31) * S
+        x, w, h = off + BOARD_SIZE - T, T, S
+
+    return pygame.Rect(x, y, w, h)
+
+
+def _recvall(conn, n):
+    buf = b""
+    while len(buf) < n:
+        chunk = conn.recv(n - len(buf))
+        if not chunk:
+            return None
+        buf += chunk
+    return buf
+
+
+def send_msg(conn, data):
+    payload = json.dumps(data, ensure_ascii=False).encode("utf-8")
+    conn.sendall(struct.pack(">I", len(payload)) + payload)
+
+
+def recv_msg(conn):
+    raw = _recvall(conn, 4)
+    if not raw:
+        return None
+    n       = struct.unpack(">I", raw)[0]
+    raw_data = _recvall(conn, n)
+    return json.loads(raw_data.decode("utf-8")) if raw_data else None
+
+
+def wrap_text(text, font, max_width):
+    words = text.split()
+    lines, line = [], ""
+    for word in words:
+        test = line + word + " "
+        if font.size(test)[0] <= max_width:
+            line = test
+        else:
+            if line:
+                lines.append(line.rstrip())
+            line = word + " "
+    if line:
+        lines.append(line.rstrip())
+    return lines
+
+
+# ---------------------------------------------------------------------------
+# Client-Klasse
+# ---------------------------------------------------------------------------
 
 class MonopolyClient:
+
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Fußball-Monopoly Multiplayer")
-        self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont("Arial", 22)
+        self.screen      = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Fußball-Monopoly – Multiplayer")
+        self.clock       = pygame.time.Clock()
+        self.font        = pygame.font.SysFont("Arial", 22)
         self.dialog_font = pygame.font.SysFont("Arial", 18)
-        
-        self.game_state = None
-        self.my_id = None
-        self.fields = self._generate_fields()
-        
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.client_socket.connect((SERVER_IP, PORT))
-            self.my_id = pickle.loads(self.client_socket.recv(1024))
-        except Exception as e:
-            print(f"Verbindung fehlgeschlagen: {e}")
-            pygame.quit()
-            sys.exit()
-            
-        t = threading.Thread(target=self.receive_data)
-        t.daemon = True
+        self.small_font  = pygame.font.SysFont("Arial",  9, bold=True)
+        self.tiny_font   = pygame.font.SysFont("Arial",  8, bold=True)
+
+        # Netzwerk
+        print(f"Verbinde mit {SERVER_IP}:{PORT} …")
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((SERVER_IP, PORT))
+        print("Verbunden! Warte auf Spielerzuweisung …")
+
+        self.player_id  = None
+        self.state      = None
+        self.state_lock = threading.Lock()
+        self.connected  = True
+
+        t = threading.Thread(target=self._receive_loop, daemon=True)
         t.start()
 
-    def _generate_fields(self):
-        try:
-            with open('spielfeld.json', 'r', encoding='utf-8') as f:
-                board_data = json.load(f)["board"]
-        except Exception:
-            board_data = [{"id": i, "name": f"Feld {i}", "type": "default"} for i in range(40)]
-            
-        fields = [None] * 40
-        offset = (WIDTH - BOARD_SIZE) // 2
-        for data in board_data:
-            i = data["id"]
-            if 0 <= i <= 10: x, y = offset + BOARD_SIZE - (i + 1) * TILE_SIZE, offset + BOARD_SIZE - TILE_SIZE
-            elif 11 <= i <= 20: x, y = offset, offset + BOARD_SIZE - ((i - 10) + 1) * TILE_SIZE
-            elif 21 <= i <= 30: x, y = offset + (i - 20) * TILE_SIZE, offset
-            else: x, y = offset + BOARD_SIZE - TILE_SIZE, offset + (i - 30) * TILE_SIZE
-            fields[i] = FieldGUI(data, x, y)
-        return fields
+        # Warten bis Zuweisung angekommen ist
+        while self.player_id is None:
+            pygame.time.wait(50)
+        print(f"Du bist Spieler {self.player_id + 1}!")
 
-    def receive_data(self):
-        while True:
+    # ------------------------------------------------------------------
+    # Netzwerk-Empfang (läuft in eigenem Thread)
+    # ------------------------------------------------------------------
+    def _receive_loop(self):
+        while self.connected:
             try:
-                data = self.client_socket.recv(16384)
-                if not data: break
-                state = pickle.loads(data)
-                if isinstance(state, GameState): self.game_state = state
-            except Exception: break
+                msg = recv_msg(self.sock)
+                if msg is None:
+                    self.connected = False
+                    break
+                if msg["type"] == "assign":
+                    self.player_id = msg["player_id"]
+                elif msg["type"] == "state":
+                    with self.state_lock:
+                        self.state = msg["data"]
+            except Exception as e:
+                print(f"Verbindungsfehler: {e}")
+                self.connected = False
 
-    def send_action(self, action):
-        try: self.client_socket.sendall(pickle.dumps(action))
-        except Exception: pass
+    def _send_action(self, action):
+        try:
+            send_msg(self.sock, {"type": "action", "action": action})
+        except Exception as e:
+            print(f"Sendefehler: {e}")
 
-    def draw_buy_dialog(self):
-        if not self.game_state or not self.game_state.active_buy_prompt: return
-        dialog_rect = pygame.Rect(WIDTH // 2 - 150, HEIGHT // 2 - 75, 300, 150)
-        pygame.draw.rect(self.screen, (245, 245, 245), dialog_rect, border_radius=8)
-        pygame.draw.rect(self.screen, BLACK, dialog_rect, 2, border_radius=8)
-        
-        field_idx = self.game_state.current_field_to_buy_idx
-        field_gui = self.fields[field_idx]
-        p_name = self.game_state.players[self.game_state.current_player_idx]["name"]
-        
-        self.screen.blit(self.dialog_font.render(f"{p_name} gelandet auf:", True, BLACK), (dialog_rect.x + 20, dialog_rect.y + 20))
-        self.screen.blit(self.dialog_font.render(f"{field_gui.name} ({field_gui.price}€)", True, BLACK), (dialog_rect.x + 20, dialog_rect.y + 50))
-        
-        if self.my_id == self.game_state.current_player_idx:
-            self.screen.blit(self.dialog_font.render("[J] Kaufen  /  [N] Ablehnen", True, (0, 100, 0)), (dialog_rect.x + 20, dialog_rect.y + 100))
-        else:
-            self.screen.blit(self.dialog_font.render("Warte auf Entscheidung...", True, (150, 50, 50)), (dialog_rect.x + 20, dialog_rect.y + 100))
+    def _send_reset(self):
+        try:
+            send_msg(self.sock, {"type": "reset"})
+        except Exception as e:
+            print(f"Sendefehler: {e}")
 
-    def draw_card_dialog(self):
-        if not self.game_state or not self.game_state.active_card: return
-        dialog_rect = pygame.Rect(WIDTH // 2 - 200, HEIGHT // 2 - 60, 400, 120)
-        pygame.draw.rect(self.screen, (245, 245, 245), dialog_rect, border_radius=8)
-        pygame.draw.rect(self.screen, BLACK, dialog_rect, 2, border_radius=8)
-        
-        words = self.game_state.active_card.split()
-        lines, line = [], ""
-        for w in words:
-            if self.dialog_font.size(line + w)[0] < 360: line += w + " "
+    # ------------------------------------------------------------------
+    # Zeichenmethoden
+    # ------------------------------------------------------------------
+
+    def _draw_board(self, state):
+        off = (WIDTH - BOARD_SIZE) // 2
+        pygame.draw.rect(self.screen, GREEN, (off, off, BOARD_SIZE, BOARD_SIZE))
+        pygame.draw.rect(
+            self.screen, GREEN,
+            (off + TILE_SIZE, off + TILE_SIZE, INNER_SIZE, INNER_SIZE),
+        )
+
+        for i in range(40):
+            f    = state["fields"][str(i)]
+            rect = field_rect(i)
+            col  = field_color(f)
+
+            # Hintergrund & Farbstreifen
+            pygame.draw.rect(self.screen, WHITE, rect)
+            stripe_size = 10
+            if rect.width >= rect.height:
+                stripe = pygame.Rect(rect.x, rect.y, rect.width, stripe_size)
             else:
-                lines.append(line)
-                line = w + " "
-        lines.append(line)
-        for i, l in enumerate(lines):
-            self.screen.blit(self.dialog_font.render(l, True, BLACK), (dialog_rect.x + 20, dialog_rect.y + 15 + i * 25))
-            
-        if self.my_id == self.game_state.current_player_idx:
-            self.screen.blit(self.dialog_font.render("[Beliebige Taste zum Schließen]", True, (0, 100, 0)), (dialog_rect.x + 20, dialog_rect.y + 90))
+                stripe = pygame.Rect(rect.x, rect.y, stripe_size, rect.height)
+            pygame.draw.rect(self.screen, col, stripe)
+            pygame.draw.rect(self.screen, BLACK, rect, 2)
+
+            # Name
+            label = f["name"][:10]
+            self.screen.blit(
+                self.small_font.render(label, True, BLACK),
+                (rect.x + 3, rect.y + stripe_size + 3),
+            )
+
+            # Besitzer
+            if f["owner"]:
+                self.screen.blit(
+                    self.tiny_font.render(f"P:{f['owner'][0]}", True, (50, 50, 50)),
+                    (rect.x + 3, rect.bottom - 11),
+                )
+
+    def _draw_players(self, state):
+        for i, p in enumerate(state["players"]):
+            rect     = field_rect(p["position"])
+            cx, cy   = rect.center
+            offset_x = -10 if i == 0 else 10
+            pygame.draw.circle(self.screen, PLAYER_COLORS[i], (cx + offset_x, cy), 12)
+            pygame.draw.circle(self.screen, BLACK,             (cx + offset_x, cy), 12, 2)
+
+    def _draw_buy_dialog(self, state):
+        if state["phase"] != "buy_prompt":
+            return
+        field  = state["fields"][str(state["buy_field_id"])]
+        cp     = state["current_player"]
+        player = state["players"][cp]
+
+        dialog_rect = pygame.Rect(WIDTH // 2 - 180, HEIGHT // 2 - 80, 360, 160)
+        pygame.draw.rect(self.screen, (245, 245, 245), dialog_rect, border_radius=8)
+        pygame.draw.rect(self.screen, BLACK,           dialog_rect, 2, border_radius=8)
+
+        self.screen.blit(
+            self.dialog_font.render(f"{player['name']} gelandet auf:", True, BLACK),
+            (dialog_rect.x + 20, dialog_rect.y + 20),
+        )
+        self.screen.blit(
+            self.dialog_font.render(f"{field['name']} ({field['price']}€)", True, BLACK),
+            (dialog_rect.x + 20, dialog_rect.y + 55),
+        )
+
+        if self.player_id == cp:
+            self.screen.blit(
+                self.dialog_font.render("[J] Kaufen  /  [N] Ablehnen", True, (0, 120, 0)),
+                (dialog_rect.x + 20, dialog_rect.y + 110),
+            )
         else:
-            self.screen.blit(self.dialog_font.render("Spieler liest Karte...", True, (150, 50, 50)), (dialog_rect.x + 20, dialog_rect.y + 90))
+            self.screen.blit(
+                self.dialog_font.render("Warte auf Entscheidung …", True, GRAY),
+                (dialog_rect.x + 20, dialog_rect.y + 110),
+            )
+
+    def _draw_card_dialog(self, state):
+        if state["phase"] != "card" or not state.get("active_card"):
+            return
+        text  = state["active_card"]
+        lines = wrap_text(text, self.dialog_font, 400)
+        box_h = 30 + len(lines) * 25 + 35
+
+        dialog_rect = pygame.Rect(WIDTH // 2 - 220, HEIGHT // 2 - box_h // 2, 440, box_h)
+        pygame.draw.rect(self.screen, (245, 245, 245), dialog_rect, border_radius=8)
+        pygame.draw.rect(self.screen, BLACK,           dialog_rect, 2, border_radius=8)
+
+        for idx, line in enumerate(lines):
+            self.screen.blit(
+                self.dialog_font.render(line, True, BLACK),
+                (dialog_rect.x + 20, dialog_rect.y + 15 + idx * 25),
+            )
+
+        cp = state["current_player"]
+        if self.player_id == cp:
+            self.screen.blit(
+                self.dialog_font.render("[Beliebige Taste] Weiter", True, (0, 120, 0)),
+                (dialog_rect.x + 20, dialog_rect.bottom - 28),
+            )
+        else:
+            self.screen.blit(
+                self.dialog_font.render("Warte auf anderen Spieler …", True, GRAY),
+                (dialog_rect.x + 20, dialog_rect.bottom - 28),
+            )
+
+    def _draw_hud(self, state):
+        off = (WIDTH - BOARD_SIZE) // 2
+        cp  = state["current_player"]
+
+        # Dran-Anzeige
+        cp_name    = state["players"][cp]["name"]
+        is_my_turn = self.player_id == cp
+        turn_text  = (
+            f"Dran: {cp_name}  (Leertaste = Würfeln)"
+            if is_my_turn
+            else f"Dran: {cp_name}  – bitte warten …"
+        )
+        self.screen.blit(
+            self.font.render(turn_text, True, PLAYER_COLORS[cp]),
+            (20, off - 32),
+        )
+
+        # Spieler-Info
+        y = off + BOARD_SIZE + 10
+        for i, p in enumerate(state["players"]):
+            suffix = "  ← DU" if i == self.player_id else ""
+            label  = (
+                f"{p['name']}: {p['money']}€  |  "
+                f"Feld: {state['fields'][str(p['position'])]['name']}{suffix}"
+            )
+            self.screen.blit(
+                self.font.render(label, True, PLAYER_COLORS[i]),
+                (20, y),
+            )
+            y += 28
+
+        self.screen.blit(
+            self.font.render("[R] Neu starten", True, BLACK),
+            (20, y + 6),
+        )
+
+        # Log-Zeile
+        log = state.get("log", "")
+        self.screen.blit(
+            pygame.font.SysFont("Arial", 15).render(log[-90:], True, (60, 60, 60)),
+            (20, off - 54),
+        )
+
+        # Eigene Spieler-Farbe als kleiner Indikator oben rechts
+        my_name = state["players"][self.player_id]["name"]
+        self.screen.blit(
+            self.dialog_font.render(f"Du:  {my_name}", True, PLAYER_COLORS[self.player_id]),
+            (WIDTH - 195, off - 32),
+        )
+
+    # ------------------------------------------------------------------
+    # Hauptschleife
+    # ------------------------------------------------------------------
 
     def run(self):
         while True:
             self.screen.fill(WHITE)
-            if not self.game_state or not self.game_state.game_started:
-                font_wait = pygame.font.SysFont("Arial", 30)
-                text = font_wait.render("Warte auf Mitspieler...", True, BLACK)
-                self.screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+            self.clock.tick(FPS)
+
+            # --- Verbindung verloren ---
+            if not self.connected:
+                self.screen.blit(
+                    self.font.render("❌ Verbindung zum Server verloren!", True, RED),
+                    (WIDTH // 2 - 230, HEIGHT // 2),
+                )
                 pygame.display.flip()
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                self.clock.tick(FPS)
+                        pygame.quit(); sys.exit()
                 continue
 
+            # --- Warten auf State ---
+            with self.state_lock:
+                state = self.state
+
+            if state is None:
+                msg = (
+                    "Verbunden – warte auf zweiten Spieler …"
+                    if self.player_id is not None
+                    else "Verbinde …"
+                )
+                self.screen.blit(self.font.render(msg, True, BLACK), (WIDTH // 2 - 230, HEIGHT // 2))
+                pygame.display.flip()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit(); sys.exit()
+                continue
+
+            cp         = state["current_player"]
+            phase      = state["phase"]
+            is_my_turn = self.player_id == cp
+
+            # --- Events ---
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN and self.my_id == self.game_state.current_player_idx:
-                    if self.game_state.active_card: self.send_action("CLOSE_CARD")
-                    elif self.game_state.active_buy_prompt:
-                        if event.key == pygame.K_j: self.send_action("BUY_YES")
-                        elif event.key == pygame.K_n: self.send_action("BUY_NO")
-                    elif event.key == pygame.K_SPACE: self.send_action("DICE")
+                    self.sock.close()
+                    pygame.quit(); sys.exit()
 
-            pygame.draw.rect(self.screen, GREEN, ((WIDTH - BOARD_SIZE) // 2, (HEIGHT - BOARD_SIZE) // 2, BOARD_SIZE, BOARD_SIZE))
-            for idx, f in enumerate(self.fields):
-                owner = self.game_state.field_owners.get(str(idx))
-                f.draw(self.screen, owner)
-                
-            for idx, p in enumerate(self.game_state.players):
-                center = self.fields[p["position"]].rect.center
-                offset_x = -10 if idx == 0 else 10
-                pygame.draw.circle(self.screen, p["color"], (center[0] + offset_x, center[1]), 12)
+                if event.type == pygame.KEYDOWN:
 
-            offset = (HEIGHT - BOARD_SIZE) // 2
-            active_p_name = self.game_state.players[self.game_state.current_player_idx]["name"]
-            status_text = f"DU BIST DRAN! ({active_p_name}) - Leertaste drücken" if self.my_id == self.game_state.current_player_idx else f"Warten auf: {active_p_name}..."
-            self.screen.blit(self.font.render(status_text, True, BLACK), (20, offset - 30))
+                    # Karte wegklicken
+                    if phase == "card" and is_my_turn:
+                        self._send_action("dismiss_card")
 
-            y = offset + BOARD_SIZE + 10
-            for idx, p in enumerate(self.game_state.players):
-                prefix = "STOLZER BESITZER (Du): " if idx == self.my_id else ""
-                f_name = self.fields[p["position"]].name
-                self.screen.blit(self.font.render(f"{prefix}{p['name']}: {p['money']}€ | Feld: {f_name}", True, p["color"]), (20, y))
-                y += 30
+                    # Kaufen-Dialog
+                    elif phase == "buy_prompt" and is_my_turn:
+                        if event.key == pygame.K_j:
+                            self._send_action("buy")
+                        elif event.key == pygame.K_n:
+                            self._send_action("decline")
 
-            self.draw_buy_dialog()
-            self.draw_card_dialog()
+                    # Würfeln
+                    elif phase == "roll" and is_my_turn and event.key == pygame.K_SPACE:
+                        self._send_action("roll")
+
+                    # Neu starten (jeder kann)
+                    elif event.key == pygame.K_r:
+                        self._send_reset()
+
+            # --- Brett zeichnen ---
+            self._draw_board(state)
+            self._draw_players(state)
+            self._draw_hud(state)
+            self._draw_buy_dialog(state)
+            self._draw_card_dialog(state)
+
             pygame.display.flip()
-            self.clock.tick(FPS)
 
+
+# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     MonopolyClient().run()
