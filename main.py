@@ -8,7 +8,7 @@ from constants import *
 from player import Player
 from card_handler import handle_card_draw
 
-# ================= FIELD CLASS (AKTUALISIERT) =================
+# ================= FIELD CLASS =================
 class Field:
     def __init__(self, data, x, y):
         self.data = data
@@ -17,11 +17,9 @@ class Field:
         self.owner = None
         self.price = data.get("price", 0)
         self.rent = data.get("rent", 0)
-        # Liest das vordefinierte Level aus der JSON (0 = Unausgebaut)
         self.stadium_level = data.get("stadium_level", 0) 
 
     def get_rent(self, all_fields):
-        """Berechnet die dynamische Miete basierend auf den Tribünen/Stadien"""
         if self.data.get("type") != "property":
             return self.rent
             
@@ -29,25 +27,22 @@ class Field:
         if not g:
             return self.rent
             
-        # Überprüfen, ob die komplette Farbgruppe demselben Besitzer gehört
         group_fields = [f for f in all_fields if f and f.data.get("type") == "property" and f.data.get("group") == g]
         is_full_group = all(f.owner == self.owner for f in group_fields)
         
-        # Miet-Multiplikatoren für den Ausbau
         if self.stadium_level == 0:
             return self.rent * 2 if is_full_group else self.rent
-        elif self.stadium_level == 1: return self.rent * 4   # 1 Tribüne
-        elif self.stadium_level == 2: return self.rent * 10  # 2 Tribünen
-        elif self.stadium_level == 3: return self.rent * 25  # 3 Tribünen
-        elif self.stadium_level == 4: return self.rent * 40  # 4 Tribünen
-        elif self.stadium_level == 5: return self.rent * 60  # 1 Stadion
+        elif self.stadium_level == 1: return self.rent * 4
+        elif self.stadium_level == 2: return self.rent * 10
+        elif self.stadium_level == 3: return self.rent * 25
+        elif self.stadium_level == 4: return self.rent * 40
+        elif self.stadium_level == 5: return self.rent * 60
         return self.rent
 
     def draw(self, screen):
         pygame.draw.rect(screen, WHITE, self.rect)
         pygame.draw.rect(screen, BLACK, self.rect, 1)
         
-        # Farbleiste für die Vereinsgruppen oben am Feld zeichnen
         g = self.data.get("group")
         if g and self.data.get("type") == "property":
             group_colors = {
@@ -57,7 +52,6 @@ class Field:
             pygame.draw.rect(screen, group_colors.get(g, (200, 200, 200)), (self.rect.x, self.rect.y, self.rect.width, 10))
             pygame.draw.rect(screen, BLACK, (self.rect.x, self.rect.y, self.rect.width, 10), 1)
 
-        # Name auf das Feld schreiben
         font = pygame.font.SysFont("Arial", 9)
         words = self.name.split(" ")
         y_offset = 12 if g else 4
@@ -66,24 +60,19 @@ class Field:
             screen.blit(txt, (self.rect.x + 3, self.rect.y + y_offset))
             y_offset += 10
             
-        # Preis anzeigen (nur wenn noch nicht gekauft)
         if self.price > 0 and self.owner is None:
             p_txt = font.render(f"{self.price}€", True, (100, 100, 100))
             screen.blit(p_txt, (self.rect.x + 3, self.rect.bottom - 12))
 
-        # Eigentümer visualisieren (kleiner farbiger Punkt unten rechts)
         if self.owner:
             dot_color = RED if "1" in self.owner else BLUE
             pygame.draw.circle(screen, dot_color, (self.rect.right - 7, self.rect.bottom - 7), 5)
 
-        # --- NEU: Grafische Anzeige für Tribünen & Stadien ---
         if self.data.get("type") == "property" and self.stadium_level > 0:
             if self.stadium_level <= 4:
-                # 1 bis 4 grüne kleine Blöcke für Tribünen am oberen Rand
                 for i in range(self.stadium_level):
                     pygame.draw.rect(screen, (34, 139, 34), (self.rect.x + 3 + i*9, self.rect.y + 1, 6, 4))
             elif self.stadium_level == 5:
-                # Ein durchgezogener goldener Balken symbolisiert das Stadion
                 pygame.draw.rect(screen, (255, 215, 0), (self.rect.x + 3, self.rect.y + 1, self.rect.width - 6, 5))
 
 
@@ -111,13 +100,13 @@ class MonopolyGUI:
         self.fields = self.load_board()
         
         self.state = "IDLE"
+        self.has_rolled = False 
         self.message = None
         self.buy_field = None
         self.last_dice_text = ""
         self.last_roll_was_double = False
         self.pending_card_action = None
         
-        # Variablen für das neue Ausbausystem
         self.buildable_fields = []
         self.build_index = 0
         
@@ -156,17 +145,19 @@ class MonopolyGUI:
         player.is_in_jail = True
         player.jail_turns = 0
         player.yellow_cards = 0
-        self.last_roll_was_double = False
+        self.has_rolled = True  # Zug endet nach Platzverweis automatisch
         self.show_message(f"ROTE KARTE / PLATZVERWEIS!\n{player.name} muss sofort auf die Strafbank (Feld 10).")
         self.state = "MESSAGE"
 
     def next_player(self):
         self.current = (self.current + 1) % len(self.players)
+        self.has_rolled = False  # Setzt Würfel-Flag für den nächsten Spieler zurück
         self.speichern()
 
     def speichern(self, dateiname="spielstand.json"):
         daten = {
             "current_player_idx": self.current,
+            "has_rolled": self.has_rolled,
             "players": [{
                 "position": p.position, 
                 "money": p.money, 
@@ -177,7 +168,6 @@ class MonopolyGUI:
                 "jail_turns": p.jail_turns,
                 "has_jail_free_card": p.has_jail_free_card
             } for p in self.players],
-            # Speichert Eigentümer UND das aktuelle Ausbau-Level ab
             "field_owners": {
                 str(i): {"owner": f.owner, "stadium_level": f.stadium_level} 
                 for i, f in enumerate(self.fields) if f is not None and f.owner is not None
@@ -193,6 +183,7 @@ class MonopolyGUI:
             with open(dateiname, "r", encoding="utf-8") as datei:
                 daten = json.load(datei)
             self.current = daten["current_player_idx"]
+            self.has_rolled = daten.get("has_rolled", False)
             for p, pd in zip(self.players, daten["players"]):
                 p.position = pd["position"]
                 p.money = pd["money"]
@@ -209,7 +200,6 @@ class MonopolyGUI:
                     self.fields[idx].owner = fdata["owner"]
                     self.fields[idx].stadium_level = fdata.get("stadium_level", 0)
                 else:
-                    # Abwärtskompatibilität für ältere Speicherstände
                     self.fields[idx].owner = fdata
                     self.fields[idx].stadium_level = 0
                     
@@ -227,6 +217,7 @@ class MonopolyGUI:
         for f in self.fields:
             if f: f.stadium_level, f.owner = 0, None
         self.current = 0
+        self.has_rolled = False
         self.state = "IDLE"
         self.message = None
         self.buy_field = None
@@ -236,7 +227,10 @@ class MonopolyGUI:
         self.show_message("Das Spiel wurde neu gestartet!")
         self.state = "MESSAGE"
 
-    def land(self, player):
+    def land(self, player, passed_go=False):
+        # Text-Prefix erstellen, falls man über Los gelaufen ist
+        prefix = "Über Los gegangen! Prämie von +200€ erhalten.\n\n" if passed_go else ""
+
         if player.position == 30:
             self.send_to_jail(player)
             return
@@ -247,36 +241,38 @@ class MonopolyGUI:
         if field_type == "card":
             deck = field.data.get("deck")
             handle_card_draw(self, player, deck)
+            if passed_go:
+                self.message = prefix + self.message
             return
 
         if field_type in ["property", "TV"]:
             if field.owner is None:
                 self.buy_field = field
-                self.show_message(f"{player.name}: {field.name} kaufen?\nPreis: {field.price}€")
+                self.show_message(prefix + f"{player.name}: {field.name} kaufen?\nPreis: {field.price}€")
                 self.state = "BUY"
             elif field.owner != player.name:
-                # Nutzt jetzt die dynamische Mietberechnung inklusive Ausbauten!
                 rent = field.get_rent(self.fields) 
                 payment = min(player.money, rent)
                 player.money -= payment
                 for p in self.players:
                     if p.name == field.owner:
                         p.money += payment
-                self.show_message(f"{player.name} bezahlt {payment}€ Miete (Stufe {field.stadium_level})\nan {field.owner} für {field.name}.")
+                self.show_message(prefix + f"{player.name} bezahlt {payment}€ Miete (Stufe {field.stadium_level})\nan {field.owner} für {field.name}.")
+                self.state = "MESSAGE"
+        else:
+            # Falls man auf einem Eckfeld/Ereignisfeld landet, das keine Aktion triggert, aber über Los kam
+            if passed_go:
+                self.show_message(f"Über Los gegangen! (+200€)\nDu landest auf {field.name}.")
                 self.state = "MESSAGE"
 
     def open_build_menu(self):
-        """Überprüft vollendete Gruppen und öffnet das Ausbau-Menü"""
         player = self.players[self.current]
-        
-        # 1. Alle Farbgruppen finden, die dem Spieler KOMPLETT gehören
         owned_groups = []
-        for g in range(1, 9):
+        for g in range(1, 8):
             group_fields = [f for f in self.fields if f and f.data.get("type") == "property" and f.data.get("group") == g]
             if group_fields and all(f.owner == player.name for f in group_fields):
                 owned_groups.append(g)
                 
-        # 2. Aus diesen Gruppen alle Felder heraussuchen, die noch nicht Max-Level (Stufe 5) sind
         self.buildable_fields = [
             f for f in self.fields 
             if f and f.data.get("type") == "property" and f.data.get("group") in owned_groups and f.stadium_level < 5
@@ -292,17 +288,14 @@ class MonopolyGUI:
         self.update_build_message()
 
     def update_build_message(self):
-        """Aktualisiert den Textinhalt während des Bau-Prozesses"""
         field = self.buildable_fields[self.build_index]
         g = field.data.get("group")
-        
-        # Kostenermittlung anhand der Gruppe
         cost = 50 if g in [1, 2] else (100 if g in [3, 4] else (150 if g in [5, 6] else 200))
         
         if field.stadium_level < 4:
             txt = f"Ausbau für: {field.name}\nAktuell: {field.stadium_level} Tribüne(n)\nNächste Stufe: Tribüne {field.stadium_level + 1}\nKosten: {cost}€\n\n[J] Ausbauen  |  [N] Nächster Verein  |  [E] Beenden"
         else:
-            txt = f"Ausbau für: {field.name}\nAktuell: 4 Tribünen\nNächste Stufe: STADION (Maximum)\nKosten: {cost}€\n\n[J] Stadion bauen  |  [N] Nächster Verein  |  [E] Beenden"
+            txt = f"Ausbau Medic: {field.name}\nAktuell: 4 Tribünen\nNächste Stufe: STADION (Maximum)\nKosten: {cost}€\n\n[J] Stadion bauen  |  [N] Nächster Verein  |  [E] Beenden"
         self.show_message(txt)
 
     def roll_dice(self):
@@ -311,6 +304,7 @@ class MonopolyGUI:
             player.turns_to_skip -= 1
             self.show_message(f"{player.name} muss diese Runde aussetzen!")
             self.state = "MESSAGE"
+            self.has_rolled = True
             return
 
         d1, d2 = random.randint(1, 6), random.randint(1, 6)
@@ -328,15 +322,23 @@ class MonopolyGUI:
             self.send_to_jail(player)
             return
 
+        # --- NEU: "Über Los"-Logik berechnen ---
+        old_position = player.position
         player.position = (player.position + steps) % len(self.fields)
-        self.land(player)
+        passed_go = player.position < old_position  # Index-Umlauf bedeutet über Los gelaufen!
+        
+        if passed_go:
+            player.money += 200
 
-        if self.state == "IDLE":
-            if pasch:
-                self.show_message("PASCH!\nDu darfst noch einmal würfeln.")
-                self.state = "MESSAGE"
-            else:
-                self.next_player()
+        # Bestimmen ob der Zug nach der Aktion vorbei ist oder man nochmal würfeln darf (Pasch)
+        if pasch:
+            self.has_rolled = False  # Bei Pasch darf man nachher direkt nochmal werfen
+            self.show_message(f"PASCH! {d1}+{d2}.\nDu darfst nach der Aktion noch einmal würfeln!")
+            self.state = "MESSAGE"
+        else:
+            self.has_rolled = True   # Normaler Wurf -> Zug blockiert, bis [E] gedrückt wird
+
+        self.land(player, passed_go=passed_go)
 
     def handle_input(self, event):
         if event.type != pygame.KEYDOWN:
@@ -352,12 +354,7 @@ class MonopolyGUI:
                     self.pending_card_action = None
                     action()
                     return
-                if self.last_roll_was_double:
-                    self.last_roll_was_double = False
-                    self.state = "IDLE"
-                else:
-                    self.state = "IDLE"
-                    self.next_player()
+                self.state = "IDLE"
             return
 
         if self.state == "BUILD":
@@ -365,19 +362,17 @@ class MonopolyGUI:
             g = field.data.get("group")
             cost = 50 if g in [1, 2] else (100 if g in [3, 4] else (150 if g in [5, 6] else 200))
             
-            if event.key == pygame.K_j:  # Ja, ausbauen
+            if event.key == pygame.K_j:
                 if player.money >= cost:
                     player.money -= cost
                     field.stadium_level += 1
-                    
-                    # Liste neu filtern (falls ein Feld Stufe 5 erreicht hat, fliegt es raus)
                     self.open_build_menu() 
                 else:
                     self.show_message("Nicht genug Geld für diesen Ausbau!\n\n[N] Nächster Verein  |  [E] Beenden")
-            elif event.key == pygame.K_n:  # Nächster Verein in der Liste
+            elif event.key == pygame.K_n:
                 self.build_index = (self.build_index + 1) % len(self.buildable_fields)
                 self.update_build_message()
-            elif event.key == pygame.K_e:  # Menü verlassen
+            elif event.key == pygame.K_e:
                 self.message = None
                 self.state = "IDLE"
             return
@@ -387,28 +382,28 @@ class MonopolyGUI:
                 if player.has_jail_free_card > 0:
                     player.has_jail_free_card -= 1
                     player.is_in_jail = False
-                    self.show_message(f"{player.name} nutzt die Freikarte und ist frei!\nWürfle jetzt ganz normal.")
+                    self.has_rolled = False  # Erlaubt das Würfeln in dieser Runde
+                    self.show_message(f"{player.name} nutzt die Freikarte!\nDu kannst jetzt normal würfeln.")
                     self.state = "MESSAGE"
-                    self.last_roll_was_double = True
                 elif player.money >= 50:
                     player.money -= 50
                     player.is_in_jail = False
-                    self.show_message(f"{player.name} zahlt 50€ Strafe und ist frei!\nWürfle jetzt ganz normal.")
+                    self.has_rolled = False  # Erlaubt das Würfeln in dieser Runde
+                    self.show_message(f"{player.name} zahlt 50€ Strafe!\nDu kannst jetzt normal würfeln.")
                     self.state = "MESSAGE"
-                    self.last_roll_was_double = True
                 else:
                     self.show_message("Nicht genug Geld für die Strafe! Du musst würfeln.")
             elif event.key == pygame.K_n:
                 d1, d2 = random.randint(1, 6), random.randint(1, 6)
                 steps = d1 + d2
                 self.last_dice_text = f"{d1}+{d2}={steps}"
+                self.has_rolled = True  # Strafbank-Versuch zählt als gewürfelt
                 
                 if d1 == d2:
                     player.is_in_jail = False
                     player.position = (player.position + steps) % len(self.fields)
                     self.show_message(f"PASCH! {d1}+{d2}.\nDu verlässt die Strafbank und ziehst vorwärts!")
                     self.state = "MESSAGE"
-                    self.last_roll_was_double = False
                     self.land(player)
                 else:
                     player.jail_turns += 1
@@ -450,8 +445,17 @@ class MonopolyGUI:
                     else:
                         self.show_message(f"{player.name} ist gesperrt!\n[J] 50€ Strafe zahlen\n[N] Pasch versuchen (Runde {player.jail_turns+1}/3)")
                 else:
-                    self.roll_dice()
-            elif event.key == pygame.K_b:  # --- NEU: 'B' öffnet das Ausbau-Menü im IDLE ---
+                    # Würfeln nur erlauben, wenn noch nicht gewürfelt wurde
+                    if not self.has_rolled:
+                        self.roll_dice()
+            elif event.key == pygame.K_e:
+                if self.has_rolled:
+                    self.next_player()
+                else:
+                    self.show_message("Du musst in dieser Runde zuerst würfeln!")
+                    self.state = "MESSAGE"
+                    
+            elif event.key == pygame.K_b:
                 self.open_build_menu()
             elif event.key == pygame.K_s:
                 self.speichern()
@@ -473,13 +477,19 @@ class MonopolyGUI:
             self.screen.blit(txt, (20, y))
             y += 30
 
-        turn = self.font.render(f"Dran: {self.players[self.current].name} (Leertaste zum Würfeln)", True, BLACK)
+        # Dynamischer UI Text je nach Würfelstatus
+        if not self.has_rolled:
+            turn_str = f"Dran: {self.players[self.current].name} ([LEERTASTE] zum Würfeln)"
+        else:
+            turn_str = f"Dran: {self.players[self.current].name} ([E] drücken, um Zug zu beenden)"
+            
+        turn = self.font.render(turn_str, True, BLACK)
         self.screen.blit(turn, (20, y + 10))
 
         dice = self.font.render(f"Wurf: {self.last_dice_text}", True, BLACK)
         self.screen.blit(dice, (20, y + 45))
         
-        shortcuts = self.small_font.render("[B] Tribüne/Stadion bauen  |  [S] Speichern  |  [R] Reset", True, BLACK)
+        shortcuts = self.small_font.render("[SPACE] Würfeln  |  [E] Zug beenden  |  [B] Bauen  |  [S] Save  |  [R] Reset", True, BLACK)
         self.screen.blit(shortcuts, (20, HEIGHT - 35))
 
     def draw_message_box(self):
@@ -507,7 +517,7 @@ class MonopolyGUI:
             btn2 = self.small_font.render("[N] = Würfeln (Pasch)", True, (255, 255, 0))
             self.screen.blit(btn1, (box.x + 20, box.y + 130))
             self.screen.blit(btn2, (box.x + 180, box.y + 130))
-        elif self.state == "BUILD": # --- NEU: UI Buttons für das Bauen ---
+        elif self.state == "BUILD":
             btn1 = self.small_font.render("[J] = Ausbauen", True, (0, 255, 0))
             btn2 = self.small_font.render("[N] = Nächster", True, (255, 255, 0))
             btn3 = self.small_font.render("[E] = Beenden", True, (255, 0, 0))

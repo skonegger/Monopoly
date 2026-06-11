@@ -1,34 +1,21 @@
 {
     "current_player_idx": 0,
+    "has_rolled": false,
     "players": [
         {
-            "position": 14,
-            "money": 525,
-            "vereine": [
-                "FC PORTO",
-                "CANAL+",
-                "BAYERN MÜNCHEN",
-                "MANCHESTER UNITED"
-            ],
+            "position": 0,
+            "money": 1500,
+            "vereine": [],
             "turns_to_skip": 0,
             "yellow_cards": 0,
             "is_in_jail": false,
-            "jail_turns": 3,
+            "jail_turns": 0,
             "has_jail_free_card": 0
         },
         {
-            "position": 3,
-            "money": 0,
-            "vereine": [
-                "PRIME VIDEO",
-                "BENFICA",
-                "VfB STUTTGART",
-                "AC MILAN",
-                "MANCHESTER CITY",
-                "Feyenoord",
-                "DAZN",
-                "RB SALZBRUG"
-            ],
+            "position": 0,
+            "money": 1500,
+            "vereine": [],
             "turns_to_skip": 0,
             "yellow_cards": 0,
             "is_in_jail": false,
@@ -36,54 +23,5 @@
             "has_jail_free_card": 0
         }
     ],
-    "field_owners": {
-        "3": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "5": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "6": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "13": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "14": {
-            "owner": "Spieler 1",
-            "stadium_level": 0
-        },
-        "15": {
-            "owner": "Spieler 1",
-            "stadium_level": 0
-        },
-        "21": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "24": {
-            "owner": "Spieler 1",
-            "stadium_level": 0
-        },
-        "25": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "26": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        },
-        "31": {
-            "owner": "Spieler 1",
-            "stadium_level": 0
-        },
-        "34": {
-            "owner": "Spieler 2",
-            "stadium_level": 0
-        }
-    }
+    "field_owners": {}
 }
