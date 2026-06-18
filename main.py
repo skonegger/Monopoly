@@ -8,6 +8,15 @@ from constants import *
 from player import Player
 from card_handler import handle_card_draw
 
+BG_DARK      = (15, 23, 42)     # Edles Anthrazit/Tiefblau für den Hintergrund
+PITCH_GREEN  = (20, 83, 45)     # Sattes Stadion-Rasen-Grün
+PANEL_BG     = (30, 41, 59)     # Hintergrund für Scorecards und Menüs
+PANEL_BORDER = (71, 85, 105)    # Dezente Rahmenlinien
+FIELD_LIGHT  = (248, 250, 252)  # Hochwertiges Off-White für die Standardfelder
+TEXT_WHITE   = (241, 245, 249)  # Klar lesbarer Text
+TEXT_MUTED   = (148, 163, 184)  # Sekundäre Informationen (Grau)
+ACCENT_GOLD  = (234, 179, 8)    # Highlight-Farbe für Max-Stadien & wichtige Events
+
 # ================= FIELD CLASS =================
 class Field:
     def __init__(self, data, x, y):
@@ -40,40 +49,49 @@ class Field:
         return self.rent
 
     def draw(self, screen):
-        pygame.draw.rect(screen, WHITE, self.rect)
-        pygame.draw.rect(screen, BLACK, self.rect, 1)
+        # Basis-Feld
+        pygame.draw.rect(screen, FIELD_LIGHT, self.rect)
+        pygame.draw.rect(screen, PANEL_BORDER, self.rect, 1)
         
+        # Farbgruppen-Header
         g = self.data.get("group")
         if g and self.data.get("type") == "property":
             group_colors = {
-                1: (128, 0, 128), 2: (255, 165, 0), 3: (64, 224, 208), 4: (173, 216, 230),
-                5: (255, 0, 0), 6: (255, 255, 0), 7: (255, 192, 203), 8: (0, 0, 139)
+                1: (147, 51, 234), 2: (249, 115, 22), 3: (20, 184, 166), 4: (56, 189, 248),
+                5: (239, 68, 68),  6: (234, 179, 8),  7: (236, 72, 153), 8: (29, 78, 216)
             }
-            pygame.draw.rect(screen, group_colors.get(g, (200, 200, 200)), (self.rect.x, self.rect.y, self.rect.width, 10))
-            pygame.draw.rect(screen, BLACK, (self.rect.x, self.rect.y, self.rect.width, 10), 1)
+            pygame.draw.rect(screen, group_colors.get(g, (200, 200, 200)), (self.rect.x, self.rect.y, self.rect.width, 12))
+            pygame.draw.rect(screen, PANEL_BORDER, (self.rect.x, self.rect.y, self.rect.width, 12), 1)
 
-        font = pygame.font.SysFont("Arial", 9)
+        # Text-Formatierung (Zentrierter & kompakter)
+        font = pygame.font.SysFont("Segoe UI", 9, bold=True)
         words = self.name.split(" ")
-        y_offset = 12 if g else 4
+        y_offset = 15 if g else 6
         for word in words:
-            txt = font.render(word, True, BLACK)
-            screen.blit(txt, (self.rect.x + 3, self.rect.y + y_offset))
+            txt = font.render(word, True, BG_DARK)
+            txt_rect = txt.get_rect(center=(self.rect.x + TILE_SIZE // 2, self.rect.y + y_offset))
+            screen.blit(txt, txt_rect)
             y_offset += 10
             
+        # Preis-Anzeige
         if self.price > 0 and self.owner is None:
-            p_txt = font.render(f"{self.price}€", True, (100, 100, 100))
-            screen.blit(p_txt, (self.rect.x + 3, self.rect.bottom - 12))
+            p_txt = font.render(f"{self.price}€", True, (100, 116, 139))
+            p_rect = p_txt.get_rect(center=(self.rect.x + TILE_SIZE // 2, self.rect.bottom - 8))
+            screen.blit(p_txt, p_rect)
 
+        # Besitzer-Markierung (Cleanerer Ring-Indikator)
         if self.owner:
-            dot_color = RED if "1" in self.owner else BLUE
-            pygame.draw.circle(screen, dot_color, (self.rect.right - 7, self.rect.bottom - 7), 5)
+            dot_color = (239, 68, 68) if "1" in self.owner else (59, 130, 246)
+            pygame.draw.circle(screen, dot_color, (self.rect.right - 8, self.rect.bottom - 8), 6)
+            pygame.draw.circle(screen, FIELD_LIGHT, (self.rect.right - 8, self.rect.bottom - 8), 3)
 
+        # Tribünen & Stadien (Modernere Symbole)
         if self.data.get("type") == "property" and self.stadium_level > 0:
             if self.stadium_level <= 4:
                 for i in range(self.stadium_level):
-                    pygame.draw.rect(screen, (34, 139, 34), (self.rect.x + 3 + i*9, self.rect.y + 1, 6, 4))
+                    pygame.draw.rect(screen, (34, 197, 94), (self.rect.x + 4 + i*8, self.rect.y + 2, 5, 3))
             elif self.stadium_level == 5:
-                pygame.draw.rect(screen, (255, 215, 0), (self.rect.x + 3, self.rect.y + 1, self.rect.width - 6, 5))
+                pygame.draw.rect(screen, ACCENT_GOLD, (self.rect.x + 4, self.rect.y + 2, self.rect.width - 8, 4))
 
 
 # ================= MAIN GUI CLASS =================
@@ -84,8 +102,9 @@ class MonopolyGUI:
         pygame.display.set_caption("Fußball Monopoly Pro")
         self.clock = pygame.time.Clock()
         
-        self.font       = pygame.font.SysFont("Arial", 22)
-        self.small_font = pygame.font.SysFont("Arial", 16)
+        self.font       = pygame.font.SysFont("Segoe UI", 20, bold=True)
+        self.small_font = pygame.font.SysFont("Segoe UI", 15)
+        self.title_font = pygame.font.SysFont("Segoe UI", 26, bold=True)
         
         with open('football_nations_monopoly.json', 'r', encoding='utf-8') as f:
             self.nations_data = json.load(f)
@@ -93,8 +112,8 @@ class MonopolyGUI:
             self.cards = json.load(f)["cards"]
 
         self.players = [
-            Player("Spieler 1", RED, 1),
-            Player("Spieler 2", BLUE, 2)
+            Player("Spieler 1", (239, 68, 68), 1), # Echtes Material-Rot
+            Player("Spieler 2", (59, 130, 246), 2) # Echtes Material-Blau
         ]
         self.current = 0
         self.fields = self.load_board()
@@ -109,11 +128,12 @@ class MonopolyGUI:
         
         self.buildable_fields = []
         self.build_index = 0
+        
         self.trade_give_money = 0
         self.trade_take_money = 0
-        self.trade_give_prop_idx = -1  # -1 bedeutet kein Verein ausgewählt
+        self.trade_give_prop_idx = -1  
         self.trade_take_prop_idx = -1
-        self.trade_cursor = 0          # Steuert die ausgewählte Zeile im Tauschmenü
+        self.trade_cursor = 0          
         
         self.laden()
 
@@ -249,6 +269,13 @@ class MonopolyGUI:
                 self.message = prefix + self.message
             return
 
+        if field_type == "tax":
+            amount = field.data.get("effect", 0)
+            player.money -= amount
+            self.show_message(prefix + f"{player.name} landet auf {field.name}.\nFinanzstrafe: -{amount}€!")
+            self.state = "MESSAGE"
+            return
+
         if field_type in ["property", "TV"]:
             if field.owner is None:
                 self.buy_field = field
@@ -271,7 +298,7 @@ class MonopolyGUI:
     def open_build_menu(self):
         player = self.players[self.current]
         owned_groups = []
-        for g in range(1, 8):
+        for g in range(1, 9): 
             group_fields = [f for f in self.fields if f and f.data.get("type") == "property" and f.data.get("group") == g]
             if group_fields and all(f.owner == player.name for f in group_fields):
                 owned_groups.append(g)
@@ -312,7 +339,7 @@ class MonopolyGUI:
 
         d1, d2 = random.randint(1, 6), random.randint(1, 6)
         steps = d1 + d2
-        self.last_dice_text = f"{d1}+{d2}={steps}"
+        self.last_dice_text = f"{d1} + {d2} = {steps}"
         pasch = (d1 == d2)
         self.last_roll_was_double = pasch
 
@@ -346,8 +373,8 @@ class MonopolyGUI:
             return
 
         player = self.players[self.current]
-
         other_player = self.players[(self.current + 1) % len(self.players)]
+
         if self.state == "TRADE_MENU":
             current_props = player.vereine
             other_props = other_player.vereine
@@ -388,13 +415,11 @@ class MonopolyGUI:
                     self.show_message(f"{other_player.name} hat nicht genug Geld!")
                     self.state = "MESSAGE"
                 else:
-                    # Geld transferieren
                     player.money -= self.trade_give_money
                     other_player.money += self.trade_give_money
                     player.money += self.trade_take_money
                     other_player.money -= self.trade_take_money
                     
-                    # Angebotenen Verein transferieren
                     if self.trade_give_prop_idx >= 0 and self.trade_give_prop_idx < len(player.vereine):
                         p_name = player.vereine[self.trade_give_prop_idx]
                         player.vereine.remove(p_name)
@@ -402,7 +427,6 @@ class MonopolyGUI:
                         for f in self.fields:
                             if f and f.name == p_name: f.owner = other_player.name
                             
-                    # Geforderten Verein transferieren
                     if self.trade_take_prop_idx >= 0 and self.trade_take_prop_idx < len(other_player.vereine):
                         p_name = other_player.vereine[self.trade_take_prop_idx]
                         other_player.vereine.remove(p_name)
@@ -529,7 +553,6 @@ class MonopolyGUI:
                     
             elif event.key == pygame.K_b:
                 self.open_build_menu()
-            # --- NEU: Tauschmenü aktivieren ---
             elif event.key == pygame.K_t:
                 self.trade_give_money = 0
                 self.trade_take_money = 0
@@ -545,37 +568,69 @@ class MonopolyGUI:
                 self.neu_starten()
 
     def draw_ui(self):
-        y = 15
-        for p in self.players:
-            status_text = f"{p.name}: {p.money}€"
-            if p.yellow_cards > 0: status_text += f" | Gelb: {p.yellow_cards}"
-            if p.has_jail_free_card > 0: status_text += f" | Frei-Karten: {p.has_jail_free_card}"
-            if p.is_in_jail: status_text += " [GESPERRT]"
-            elif p.turns_to_skip > 0: status_text += f" (Aussetzen: {p.turns_to_skip})"
-                
-            txt = self.font.render(status_text, True, p.color)
-            self.screen.blit(txt, (20, y))
-            y += 30
-
-        if not self.has_rolled:
-            turn_str = f"Dran: {self.players[self.current].name} ([LEERTASTE] zum Würfeln)"
-        else:
-            turn_str = f"Dran: {self.players[self.current].name} ([E] drücken, um Zug zu beenden)"
+        # --- TOP DISPLAY: PLAYER CARD DASHBOARDS ---
+        card_w, card_h = 320, 70
+        for idx, p in enumerate(self.players):
+            x_pos = 20 if idx == 0 else WIDTH - card_w - 20
+            y_pos = 15
             
-        turn = self.font.render(turn_str, True, BLACK)
-        self.screen.blit(turn, (20, y + 10))
+            # Highlight aktiver Spieler (Glow-Effekt am Rand)
+            is_active = (idx == self.current)
+            border_clr = p.color if is_active else PANEL_BORDER
+            thickness = 3 if is_active else 1
+            
+            # Card Container
+            pygame.draw.rect(self.screen, PANEL_BG, (x_pos, y_pos, card_w, card_h), border_radius=6)
+            pygame.draw.rect(self.screen, border_clr, (x_pos, y_pos, card_w, card_h), thickness, border_radius=6)
+            
+            # Spielername & Kontostand
+            name_txt = self.font.render(p.name, True, p.color)
+            self.screen.blit(name_txt, (x_pos + 12, y_pos + 8))
+            
+            money_txt = self.font.render(f"{p.money} €", True, TEXT_WHITE)
+            self.screen.blit(money_txt, (x_pos + card_w - money_txt.get_width() - 12, y_pos + 8))
+            
+            # Sub-Status Zeile
+            status_items = []
+            if p.yellow_cards > 0: status_items.append(f"Gelb: {p.yellow_cards}")
+            if p.has_jail_free_card > 0: status_items.append(f"Freikarten: {p.has_jail_free_card}")
+            if p.is_in_jail: status_items.append("GESPERRT")
+            elif p.turns_to_skip > 0: status_items.append(f"Aussetzen: {p.turns_to_skip}")
+            if not status_items: status_items.append(f"Vereine: {len(p.vereine)}")
+            
+            sub_txt = self.small_font.render(" | ".join(status_items), True, TEXT_MUTED)
+            self.screen.blit(sub_txt, (x_pos + 12, y_pos + 38))
 
-        dice = self.font.render(f"Wurf: {self.last_dice_text}", True, BLACK)
-        self.screen.blit(dice, (20, y + 45))
+        # --- CENTER LOGO / MATCH INFO ---
+        center_x = WIDTH // 2
         
-        shortcuts = self.small_font.render("[SPACE] Würfeln  |  [E] Beenden  |  [B] Bauen  |  [T] Tauschen  |  [S] Save", True, BLACK)
-        self.screen.blit(shortcuts, (20, HEIGHT - 35))
+        # Würfel-Visualisierung im Center
+        dice_lbl = self.small_font.render("LETZTER WURF", True, TEXT_MUTED)
+        self.screen.blit(dice_lbl, (center_x - dice_lbl.get_width()//2, 22))
+        
+        dice_val = self.title_font.render(self.last_dice_text if self.last_dice_text else "- / -", True, ACCENT_GOLD)
+        self.screen.blit(dice_val, (center_x - dice_val.get_width()//2, 42))
+
+        # --- BOTTOM SHORTCUT BAR ---
+        bar_rect = pygame.Rect(0, HEIGHT - 40, WIDTH, 40)
+        pygame.draw.rect(self.screen, PANEL_BG, bar_rect)
+        pygame.draw.rect(self.screen, PANEL_BORDER, bar_rect, 1)
+        
+        shortcuts_str = "[SPACE] Würfeln   •   [E] Zug beenden   •   [B] Stadion ausbauen   •   [T] Transfermarkt (Trade)   •   [S] Save"
+        shortcuts = self.small_font.render(shortcuts_str, True, TEXT_WHITE)
+        self.screen.blit(shortcuts, (WIDTH // 2 - shortcuts.get_width() // 2, HEIGHT - 28))
 
     def draw_message_box(self):
+        # Kinematische Verdunklung bei Overlays
+        if self.state in ["MESSAGE", "BUY", "JAIL", "BUILD", "TRADE_MENU", "TRADE_DECISION"]:
+            overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            overlay.fill((15, 23, 42, 180)) # Transparenter Schleier
+            self.screen.blit(overlay, (0, 0))
+
         if self.state == "TRADE_MENU":
             box = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 130, 500, 260)
-            pygame.draw.rect(self.screen, DARK, box, border_radius=8)
-            pygame.draw.rect(self.screen, WHITE, box, 2, border_radius=8)
+            pygame.draw.rect(self.screen, PANEL_BG, box, border_radius=8)
+            pygame.draw.rect(self.screen, TEXT_WHITE, box, 2, border_radius=8)
             
             p_cur = self.players[self.current]
             p_oth = self.players[(self.current + 1) % len(self.players)]
@@ -591,22 +646,22 @@ class MonopolyGUI:
                 "[ ANGEBOT ABSENDEN ]"
             ]
             
-            y = box.y + 20
+            y = box.y + 25
             for i, row in enumerate(rows):
-                color = (0, 255, 0) if i == self.trade_cursor else WHITE
-                prefix = "> " if i == self.trade_cursor else "  "
+                color = (34, 197, 94) if i == self.trade_cursor else TEXT_WHITE
+                prefix = "▶  " if i == self.trade_cursor else "   "
                 txt = self.small_font.render(prefix + row, True, color)
-                self.screen.blit(txt, (box.x + 20, y))
-                y += 32
+                self.screen.blit(txt, (box.x + 30, y))
+                y += 34
                 
-            help_txt = self.small_font.render("[▲/▼] Zeile  |  [◀/▶] Wert ändern  |  [J/ENTER] Senden  |  [E] Exit", True, (200, 200, 200))
-            self.screen.blit(help_txt, (box.x + 20, box.y + 215))
+            help_txt = self.small_font.render("[▲/▼] Zeile  |  [◀/▶] Ändern  |  [J/ENTER] Senden  |  [E] Exit", True, TEXT_MUTED)
+            self.screen.blit(help_txt, (box.x + 30, box.y + 220))
             return
 
         if self.state == "TRADE_DECISION":
             box = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 110, 500, 220)
-            pygame.draw.rect(self.screen, DARK, box, border_radius=8)
-            pygame.draw.rect(self.screen, WHITE, box, 2, border_radius=8)
+            pygame.draw.rect(self.screen, PANEL_BG, box, border_radius=8)
+            pygame.draw.rect(self.screen, TEXT_WHITE, box, 2, border_radius=8)
             
             p_cur = self.players[self.current]
             p_oth = self.players[(self.current + 1) % len(self.players)]
@@ -615,58 +670,60 @@ class MonopolyGUI:
             t_prop = p_oth.vereine[self.trade_take_prop_idx] if self.trade_take_prop_idx >= 0 else "Keiner"
             
             lines = [
-                f"TAUSCHANGEBOT von {p_cur.name} an {p_oth.name}:",
-                f"Er bietet dir: {self.trade_give_money}€ & Verein: {g_prop}",
-                f"Er fordert:     {self.trade_take_money}€ & Verein: {t_prop}",
+                f"TAUSCHANGEBOT von {p_cur.name}:",
+                f"Bietet: {self.trade_give_money}€ & Verein: {g_prop}",
+                f"Fordert: {self.trade_take_money}€ & Verein: {t_prop}",
                 "",
                 f"{p_oth.name}, nimmst du an?",
-                "[J] = ANNEHMEN      |      [N] = ABLEHNEN"
+                "[J] Annehmen      |      [N] Ablehnen"
             ]
             y = box.y + 20
             for line in lines:
-                txt = self.small_font.render(line, True, WHITE)
-                self.screen.blit(txt, (box.x + 20, y))
+                txt = self.small_font.render(line, True, TEXT_WHITE)
+                self.screen.blit(txt, (box.x + 30, y))
                 y += 28
             return
 
         if not self.message:
             return
 
-        box = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 85, 500, 170)
-        pygame.draw.rect(self.screen, DARK, box, border_radius=8)
-        pygame.draw.rect(self.screen, WHITE, box, 2, border_radius=8)
+        # Standard Message Box
+        box = pygame.Rect(WIDTH // 2 - 240, HEIGHT // 2 - 80, 480, 160)
+        pygame.draw.rect(self.screen, PANEL_BG, box, border_radius=8)
+        pygame.draw.rect(self.screen, PANEL_BORDER, box, 2, border_radius=8)
 
         lines = self.message.split("\n")
-        y = box.y + 20
+        y = box.y + 22
         for line in lines:
-            txt = self.small_font.render(line, True, WHITE)
-            self.screen.blit(txt, (box.x + 20, y))
-            y += 26
+            txt = self.small_font.render(line, True, TEXT_WHITE)
+            self.screen.blit(txt, (box.x + 25, y))
+            y += 25
 
         if self.state == "BUY":
-            yes, no = self.small_font.render("[J] = JA", True, (0, 255, 0)), self.small_font.render("[N] = NEIN", True, (255, 0, 0))
-            self.screen.blit(yes, (box.x + 20, box.y + 130))
-            self.screen.blit(no,  (box.x + 150, box.y + 130))
+            yes = self.small_font.render("[J] Kaufen", True, (34, 197, 94))
+            no = self.small_font.render("[N] Ablehnen", True, (239, 68, 68))
+            self.screen.blit(yes, (box.x + 25, box.y + 120))
+            self.screen.blit(no,  (box.x + 160, box.y + 120))
         elif self.state == "JAIL":
             player = self.players[self.current]
-            btn1 = self.small_font.render("[J] = Karte nutzen" if player.has_jail_free_card > 0 else "[J] = 50€ zahlen", True, (0, 255, 0))
-            btn2 = self.small_font.render("[N] = Würfeln (Pasch)", True, (255, 255, 0))
-            self.screen.blit(btn1, (box.x + 20, box.y + 130))
-            self.screen.blit(btn2, (box.x + 180, box.y + 130))
+            btn1 = self.small_font.render("[J] Freikarte nutzen" if player.has_jail_free_card > 0 else "[J] 50€ Strafe", True, (34, 197, 94))
+            btn2 = self.small_font.render("[N] Pasch versuchen", True, ACCENT_GOLD)
+            self.screen.blit(btn1, (box.x + 25, box.y + 120))
+            self.screen.blit(btn2, (box.x + 200, box.y + 120))
         elif self.state == "BUILD":
-            btn1 = self.small_font.render("[J] = Ausbauen", True, (0, 255, 0))
-            btn2 = self.small_font.render("[N] = Nächster", True, (255, 255, 0))
-            btn3 = self.small_font.render("[E] = Beenden", True, (255, 0, 0))
-            self.screen.blit(btn1, (box.x + 20, box.y + 130))
-            self.screen.blit(btn2, (box.x + 160, box.y + 130))
-            self.screen.blit(btn3, (box.x + 320, box.y + 130))
+            btn1 = self.small_font.render("[J] Ausbauen", True, (34, 197, 94))
+            btn2 = self.small_font.render("[N] Nächster", True, ACCENT_GOLD)
+            btn3 = self.small_font.render("[E] Beenden", True, (239, 68, 68))
+            self.screen.blit(btn1, (box.x + 25, box.y + 120))
+            self.screen.blit(btn2, (box.x + 165, box.y + 120))
+            self.screen.blit(btn3, (box.x + 300, box.y + 120))
         else:
-            ok = self.small_font.render("[J] = Bestätigen", True, (0, 255, 0))
-            self.screen.blit(ok, (box.x + 20, box.y + 130))
+            ok = self.small_font.render("[J] Bestätigen", True, (34, 197, 94))
+            self.screen.blit(ok, (box.x + 25, box.y + 120))
 
     def run(self):
         while True:
-            self.screen.fill(WHITE)
+            self.screen.fill(BG_DARK) # Neuer Background-Fill
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.speichern()
@@ -675,10 +732,13 @@ class MonopolyGUI:
                 self.handle_input(event)
 
             offset = (WIDTH - BOARD_SIZE) // 2
-            pygame.draw.rect(self.screen, GREEN, (offset, offset, BOARD_SIZE, BOARD_SIZE))
+            pygame.draw.rect(self.screen, PITCH_GREEN, (offset, offset, BOARD_SIZE, BOARD_SIZE)) # Stadion-Rasen
 
+            # Spielfeld & Raster zeichnen
             for field in self.fields:
                 if field: field.draw(self.screen)
+                
+            # Spieler zeichnen (Nutzt dein Player-Token-System)
             for player in self.players:
                 player.draw(self.screen, self.fields)
 
