@@ -8,6 +8,7 @@ from constants import *
 from player import Player
 from card_handler import handle_card_draw
 
+# ================= PREMIUM COLOR PALETTE =================
 BG_DARK      = (15, 23, 42)     # Edles Anthrazit/Tiefblau für den Hintergrund
 PITCH_GREEN  = (20, 83, 45)     # Sattes Stadion-Rasen-Grün
 PANEL_BG     = (30, 41, 59)     # Hintergrund für Scorecards und Menüs
@@ -63,7 +64,7 @@ class Field:
             pygame.draw.rect(screen, group_colors.get(g, (200, 200, 200)), (self.rect.x, self.rect.y, self.rect.width, 12))
             pygame.draw.rect(screen, PANEL_BORDER, (self.rect.x, self.rect.y, self.rect.width, 12), 1)
 
-        # Text-Formatierung (Zentrierter & kompakter)
+        # Text-Formatierung
         font = pygame.font.SysFont("Segoe UI", 9, bold=True)
         words = self.name.split(" ")
         y_offset = 15 if g else 6
@@ -73,19 +74,19 @@ class Field:
             screen.blit(txt, txt_rect)
             y_offset += 10
             
-        # Preis-Anzeige
+        # Preis-Anzeige 
         if self.price > 0 and self.owner is None:
             p_txt = font.render(f"{self.price}€", True, (100, 116, 139))
             p_rect = p_txt.get_rect(center=(self.rect.x + TILE_SIZE // 2, self.rect.bottom - 8))
             screen.blit(p_txt, p_rect)
 
-        # Besitzer-Markierung (Cleanerer Ring-Indikator)
+        # Besitzer-Markierung
         if self.owner:
             dot_color = (239, 68, 68) if "1" in self.owner else (59, 130, 246)
             pygame.draw.circle(screen, dot_color, (self.rect.right - 8, self.rect.bottom - 8), 6)
             pygame.draw.circle(screen, FIELD_LIGHT, (self.rect.right - 8, self.rect.bottom - 8), 3)
 
-        # Tribünen & Stadien (Modernere Symbole)
+        # Tribünen & Stadien (nur für Properties)
         if self.data.get("type") == "property" and self.stadium_level > 0:
             if self.stadium_level <= 4:
                 for i in range(self.stadium_level):
@@ -112,8 +113,8 @@ class MonopolyGUI:
             self.cards = json.load(f)["cards"]
 
         self.players = [
-            Player("Spieler 1", (239, 68, 68), 1), # Echtes Material-Rot
-            Player("Spieler 2", (59, 130, 246), 2) # Echtes Material-Blau
+            Player("Spieler 1", (239, 68, 68), 1),
+            Player("Spieler 2", (59, 130, 246), 2)
         ]
         self.current = 0
         self.fields = self.load_board()
@@ -123,6 +124,7 @@ class MonopolyGUI:
         self.message = None
         self.buy_field = None
         self.last_dice_text = ""
+        self.last_roll_value = 0 # Speichert den exakten Integer-Wert des letzten Wurfs für Sponsorenfelder
         self.last_roll_was_double = False
         self.pending_card_action = None
         
@@ -227,6 +229,9 @@ class MonopolyGUI:
                 else:
                     self.fields[idx].owner = fdata
                     self.fields[idx].stadium_level = 0
+            
+            for p in self.players:
+                p.vereine = [f.name for f in self.fields if f and f.owner == p.name]
                     
             self.show_message("Spielstand erfolgreich geladen!")
             self.state = "MESSAGE"
@@ -247,6 +252,7 @@ class MonopolyGUI:
         self.message = None
         self.buy_field = None
         self.last_dice_text = ""
+        self.last_roll_value = 0
         self.last_roll_was_double = False
         self.pending_card_action = None
         self.show_message("Das Spiel wurde neu gestartet!")
@@ -276,19 +282,26 @@ class MonopolyGUI:
             self.state = "MESSAGE"
             return
 
-        if field_type in ["property", "TV"]:
+        if field_type in ["property", "TV", "utility"]:
             if field.owner is None:
                 self.buy_field = field
                 self.show_message(prefix + f"{player.name}: {field.name} kaufen?\nPreis: {field.price}€")
                 self.state = "BUY"
             elif field.owner != player.name:
-                rent = field.get_rent(self.fields) 
+                # Mietberechnung angepasst an den Feldtyp
+                if field_type == "utility":
+                    rent = self.last_roll_value * 10
+                    rent_desc = f"Gewürfelt: {self.last_roll_value} × 10"
+                else:
+                    rent = field.get_rent(self.fields) 
+                    rent_desc = f"Stufe {field.stadium_level}" if field_type == "property" else "TV-Tarif"
+
                 payment = min(player.money, rent)
                 player.money -= payment
                 for p in self.players:
                     if p.name == field.owner:
                         p.money += payment
-                self.show_message(prefix + f"{player.name} bezahlt {payment}€ Miete (Stufe {field.stadium_level})\nan {field.owner} für {field.name}.")
+                self.show_message(prefix + f"{player.name} bezahlt {payment}€ Miete ({rent_desc})\nan {field.owner} für {field.name}.")
                 self.state = "MESSAGE"
         else:
             if passed_go:
@@ -339,6 +352,7 @@ class MonopolyGUI:
 
         d1, d2 = random.randint(1, 6), random.randint(1, 6)
         steps = d1 + d2
+        self.last_roll_value = steps  # Wurfwert zwischenspeichern
         self.last_dice_text = f"{d1} + {d2} = {steps}"
         pasch = (d1 == d2)
         self.last_roll_was_double = pasch
@@ -375,10 +389,11 @@ class MonopolyGUI:
         player = self.players[self.current]
         other_player = self.players[(self.current + 1) % len(self.players)]
 
-        if self.state == "TRADE_MENU":
-            current_props = player.vereine
-            other_props = other_player.vereine
+        # Dynamische Ermittlung der Verträge über die Feldreferenzen anstatt bloßer Strings
+        current_props = [f for f in self.fields if f and f.owner == player.name]
+        other_props = [f for f in self.fields if f and f.owner == other_player.name]
 
+        if self.state == "TRADE_MENU":
             if event.key == pygame.K_UP:
                 self.trade_cursor = (self.trade_cursor - 1) % 5
             elif event.key == pygame.K_DOWN:
@@ -420,19 +435,16 @@ class MonopolyGUI:
                     player.money += self.trade_take_money
                     other_player.money -= self.trade_take_money
                     
-                    if self.trade_give_prop_idx >= 0 and self.trade_give_prop_idx < len(player.vereine):
-                        p_name = player.vereine[self.trade_give_prop_idx]
-                        player.vereine.remove(p_name)
-                        other_player.vereine.append(p_name)
-                        for f in self.fields:
-                            if f and f.name == p_name: f.owner = other_player.name
+                    # Übertragung basiert nun sicher auf der eindeutigen Feldreferenz
+                    if self.trade_give_prop_idx >= 0 and self.trade_give_prop_idx < len(current_props):
+                        current_props[self.trade_give_prop_idx].owner = other_player.name
                             
-                    if self.trade_take_prop_idx >= 0 and self.trade_take_prop_idx < len(other_player.vereine):
-                        p_name = other_player.vereine[self.trade_take_prop_idx]
-                        other_player.vereine.remove(p_name)
-                        player.vereine.append(p_name)
-                        for f in self.fields:
-                            if f and f.name == p_name: f.owner = player.name
+                    if self.trade_take_prop_idx >= 0 and self.trade_take_prop_idx < len(other_props):
+                        other_props[self.trade_take_prop_idx].owner = player.name
+                    
+                    # Update der Vereinslisten-Strings für Savegame-Kompatibilität
+                    player.vereine = [f.name for f in self.fields if f and f.owner == player.name]
+                    other_player.vereine = [f.name for f in self.fields if f and f.owner == other_player.name]
                             
                     self.show_message("Tausch erfolgreich abgeschlossen!")
                     self.state = "MESSAGE"
@@ -492,6 +504,7 @@ class MonopolyGUI:
             elif event.key == pygame.K_n:
                 d1, d2 = random.randint(1, 6), random.randint(1, 6)
                 steps = d1 + d2
+                self.last_roll_value = steps
                 self.last_dice_text = f"{d1}+{d2}={steps}"
                 self.has_rolled = True  
                 
@@ -521,7 +534,8 @@ class MonopolyGUI:
                 if player.money >= self.buy_field.price:
                     player.money -= self.buy_field.price
                     self.buy_field.owner = player.name
-                    player.vereine.append(self.buy_field.name)
+                    # Liste neu generieren
+                    player.vereine = [f.name for f in self.fields if f and f.owner == player.name]
                     self.show_message(f"{player.name} kauft {self.buy_field.name}!")
                 else:
                     self.show_message("Nicht genug Geld auf dem Konto!")
@@ -574,37 +588,31 @@ class MonopolyGUI:
             x_pos = 20 if idx == 0 else WIDTH - card_w - 20
             y_pos = 15
             
-            # Highlight aktiver Spieler (Glow-Effekt am Rand)
             is_active = (idx == self.current)
             border_clr = p.color if is_active else PANEL_BORDER
             thickness = 3 if is_active else 1
             
-            # Card Container
             pygame.draw.rect(self.screen, PANEL_BG, (x_pos, y_pos, card_w, card_h), border_radius=6)
             pygame.draw.rect(self.screen, border_clr, (x_pos, y_pos, card_w, card_h), thickness, border_radius=6)
             
-            # Spielername & Kontostand
             name_txt = self.font.render(p.name, True, p.color)
             self.screen.blit(name_txt, (x_pos + 12, y_pos + 8))
             
             money_txt = self.font.render(f"{p.money} €", True, TEXT_WHITE)
             self.screen.blit(money_txt, (x_pos + card_w - money_txt.get_width() - 12, y_pos + 8))
             
-            # Sub-Status Zeile
             status_items = []
             if p.yellow_cards > 0: status_items.append(f"Gelb: {p.yellow_cards}")
             if p.has_jail_free_card > 0: status_items.append(f"Freikarten: {p.has_jail_free_card}")
             if p.is_in_jail: status_items.append("GESPERRT")
             elif p.turns_to_skip > 0: status_items.append(f"Aussetzen: {p.turns_to_skip}")
-            if not status_items: status_items.append(f"Vereine: {len(p.vereine)}")
+            if not status_items: status_items.append(f"Besitz: {len(p.vereine)}")
             
             sub_txt = self.small_font.render(" | ".join(status_items), True, TEXT_MUTED)
             self.screen.blit(sub_txt, (x_pos + 12, y_pos + 38))
 
         # --- CENTER LOGO / MATCH INFO ---
         center_x = WIDTH // 2
-        
-        # Würfel-Visualisierung im Center
         dice_lbl = self.small_font.render("LETZTER WURF", True, TEXT_MUTED)
         self.screen.blit(dice_lbl, (center_x - dice_lbl.get_width()//2, 22))
         
@@ -621,28 +629,29 @@ class MonopolyGUI:
         self.screen.blit(shortcuts, (WIDTH // 2 - shortcuts.get_width() // 2, HEIGHT - 28))
 
     def draw_message_box(self):
-        # Kinematische Verdunklung bei Overlays
         if self.state in ["MESSAGE", "BUY", "JAIL", "BUILD", "TRADE_MENU", "TRADE_DECISION"]:
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-            overlay.fill((15, 23, 42, 180)) # Transparenter Schleier
+            overlay.fill((15, 23, 42, 180)) 
             self.screen.blit(overlay, (0, 0))
+
+        p_cur = self.players[self.current]
+        p_oth = self.players[(self.current + 1) % len(self.players)]
+        current_props = [f for f in self.fields if f and f.owner == p_cur.name]
+        other_props = [f for f in self.fields if f and f.owner == p_oth.name]
 
         if self.state == "TRADE_MENU":
             box = pygame.Rect(WIDTH // 2 - 250, HEIGHT // 2 - 130, 500, 260)
             pygame.draw.rect(self.screen, PANEL_BG, box, border_radius=8)
             pygame.draw.rect(self.screen, TEXT_WHITE, box, 2, border_radius=8)
             
-            p_cur = self.players[self.current]
-            p_oth = self.players[(self.current + 1) % len(self.players)]
-            
-            g_prop = p_cur.vereine[self.trade_give_prop_idx] if (self.trade_give_prop_idx >= 0 and p_cur.vereine) else "Keiner"
-            t_prop = p_oth.vereine[self.trade_take_prop_idx] if (self.trade_take_prop_idx >= 0 and p_oth.vereine) else "Keiner"
+            g_prop = current_props[self.trade_give_prop_idx].name if (self.trade_give_prop_idx >= 0 and current_props) else "Keiner"
+            t_prop = other_props[self.trade_take_prop_idx].name if (self.trade_take_prop_idx >= 0 and other_props) else "Keiner"
             
             rows = [
                 f"Geld bieten: {self.trade_give_money}€  (Max: {p_cur.money}€)",
-                f"Verein bieten: {g_prop}",
+                f"Besitz bieten: {g_prop}",
                 f"Geld fordern: {self.trade_take_money}€  (Max: {p_oth.money}€)",
-                f"Verein fordern: {t_prop}",
+                f"Besitz fordern: {t_prop}",
                 "[ ANGEBOT ABSENDEN ]"
             ]
             
@@ -663,16 +672,13 @@ class MonopolyGUI:
             pygame.draw.rect(self.screen, PANEL_BG, box, border_radius=8)
             pygame.draw.rect(self.screen, TEXT_WHITE, box, 2, border_radius=8)
             
-            p_cur = self.players[self.current]
-            p_oth = self.players[(self.current + 1) % len(self.players)]
-            
-            g_prop = p_cur.vereine[self.trade_give_prop_idx] if self.trade_give_prop_idx >= 0 else "Keiner"
-            t_prop = p_oth.vereine[self.trade_take_prop_idx] if self.trade_take_prop_idx >= 0 else "Keiner"
+            g_prop = current_props[self.trade_give_prop_idx].name if self.trade_give_prop_idx >= 0 else "Keiner"
+            t_prop = other_props[self.trade_take_prop_idx].name if self.trade_take_prop_idx >= 0 else "Keiner"
             
             lines = [
                 f"TAUSCHANGEBOT von {p_cur.name}:",
-                f"Bietet: {self.trade_give_money}€ & Verein: {g_prop}",
-                f"Fordert: {self.trade_take_money}€ & Verein: {t_prop}",
+                f"Bietet: {self.trade_give_money}€ & Objekt: {g_prop}",
+                f"Fordert: {self.trade_take_money}€ & Objekt: {t_prop}",
                 "",
                 f"{p_oth.name}, nimmst du an?",
                 "[J] Annehmen      |      [N] Ablehnen"
@@ -687,7 +693,6 @@ class MonopolyGUI:
         if not self.message:
             return
 
-        # Standard Message Box
         box = pygame.Rect(WIDTH // 2 - 240, HEIGHT // 2 - 80, 480, 160)
         pygame.draw.rect(self.screen, PANEL_BG, box, border_radius=8)
         pygame.draw.rect(self.screen, PANEL_BORDER, box, 2, border_radius=8)
@@ -723,7 +728,7 @@ class MonopolyGUI:
 
     def run(self):
         while True:
-            self.screen.fill(BG_DARK) # Neuer Background-Fill
+            self.screen.fill(BG_DARK)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.speichern()
@@ -732,13 +737,11 @@ class MonopolyGUI:
                 self.handle_input(event)
 
             offset = (WIDTH - BOARD_SIZE) // 2
-            pygame.draw.rect(self.screen, PITCH_GREEN, (offset, offset, BOARD_SIZE, BOARD_SIZE)) # Stadion-Rasen
+            pygame.draw.rect(self.screen, PITCH_GREEN, (offset, offset, BOARD_SIZE, BOARD_SIZE))
 
-            # Spielfeld & Raster zeichnen
             for field in self.fields:
                 if field: field.draw(self.screen)
                 
-            # Spieler zeichnen (Nutzt dein Player-Token-System)
             for player in self.players:
                 player.draw(self.screen, self.fields)
 
